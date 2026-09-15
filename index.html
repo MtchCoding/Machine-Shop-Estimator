@@ -353,7 +353,7 @@
 
                     <div style="display:flex; gap:10px;">
                         <div class="form-group" style="flex:1;">
-                            <label for="materialQty">Quantity / Units Needed</label>
+                            <label id="materialQtyLabel" for="materialQty">Quantity / Units Needed</label>
                             <input type="number" id="materialQty" value="1" min="0.1" step="any">
                         </div>
                     </div>
@@ -376,14 +376,14 @@
                             </div>
 
                             <div class="form-group" style="flex:1;">
-                                <label for="customMatPrice">Cost per Unit (₱)</label>
+                                <label id="customMatPriceLabel" for="customMatPrice">Cost per Unit (₱)</label>
                                 <input type="number" id="customMatPrice" value="0" min="0" step="0.01">
                             </div>
                         </div>
 
                         <div class="form-group">
                             <label for="customMatPerKg">Material Price Type</label>
-                            <select id="customMatPerKg">
+                            <select id="customMatPerKg" onchange="updateMaterialTypeUI()">
                                 <option value="false">Per Unit / Piece / Length</option>
                                 <option value="true">Per KG</option>
                             </select>
@@ -809,19 +809,41 @@
         calculateJob();
     }
 
+    function updateMaterialTypeUI() {
+        const isPerKg = document.getElementById('customMatPerKg').value === 'true';
+        const qtyLabel = document.getElementById('materialQtyLabel');
+        const priceLabel = document.getElementById('customMatPriceLabel');
+        const unitInput = document.getElementById('customMatUnit');
+
+        if (qtyLabel) {
+            qtyLabel.textContent = isPerKg ? 'Quantity / KG Needed' : 'Quantity / Units Needed';
+        }
+
+        if (priceLabel) {
+            priceLabel.textContent = isPerKg ? 'Price per KG (₱)' : 'Cost per Unit (₱)';
+        }
+
+        if (unitInput) {
+            unitInput.placeholder = isPerKg ? 'e.g. kg' : 'e.g. pc, kg, meter';
+            if (isPerKg && !unitInput.value.trim()) {
+                unitInput.value = 'kg';
+            }
+        }
+    }
+
     function addCustomMaterialToJob() {
         const name = document.getElementById('customMatName').value.trim();
         const size = document.getElementById('customMatSize').value.trim();
-        const unit = document.getElementById('customMatUnit').value.trim() || 'unit';
+        const isPerKg = document.getElementById('customMatPerKg').value === 'true';
+        const unit = (document.getElementById('customMatUnit').value.trim() || (isPerKg ? 'kg' : 'unit')).toLowerCase();
         const price = parseFloat(document.getElementById('customMatPrice').value);
         const qty = parseFloat(document.getElementById('materialQty').value);
-        const isPerKg = document.getElementById('customMatPerKg').value === 'true';
 
         if (!name || isNaN(price) || price < 0 || isNaN(qty) || qty <= 0) {
-            return alert('Please enter material name, a valid unit cost, and a positive quantity.');
+            return alert('Please enter material name, a valid price, and a positive quantity.');
         }
 
-        const total = isPerKg ? price * qty : price * qty;
+        const total = price * qty;
 
         currentJobMaterials.push({
             id: Date.now(),
@@ -839,6 +861,8 @@
         document.getElementById('customMatUnit').value = '';
         document.getElementById('customMatPrice').value = '0';
         document.getElementById('customMatPerKg').value = 'false';
+        document.getElementById('materialQty').value = '1';
+        updateMaterialTypeUI();
 
         renderJobTables();
         calculateJob();
@@ -958,20 +982,37 @@
         return '"' + text.replace(/"/g, '""') + '"';
     }
 
-    function exportSummaryCSV() {
+    function getQuoteSummary() {
         const jobTitle = document.getElementById('jobTitle').value.trim() || 'Machine Shop Estimation';
         const client = document.getElementById('clientName').value.trim() || 'N/A';
-
         const matTotal = currentJobMaterials.reduce((acc, curr) => acc + Number(curr.total || 0), 0);
         const laborTotal = currentJobLabor.reduce((acc, curr) => acc + Number(curr.total || 0), 0);
         const overhead = parseFloat(document.getElementById('overheadCost').value) || 0;
         const targetMarginPct = parseFloat(document.getElementById('targetMargin').value) || 0;
         const contractPrice = parseFloat(document.getElementById('contractPrice').value) || 0;
-
         const directCost = matTotal + laborTotal + overhead;
         const suggestedPrice = directCost * (1 + targetMarginPct / 100);
         const profit = contractPrice - directCost;
         const netMarginPct = contractPrice > 0 ? (profit / contractPrice) * 100 : 0;
+
+        return {
+            jobTitle,
+            client,
+            matTotal,
+            laborTotal,
+            overhead,
+            targetMarginPct,
+            contractPrice,
+            directCost,
+            suggestedPrice,
+            profit,
+            netMarginPct
+        };
+    }
+
+    function exportSummaryCSV() {
+        const summary = getQuoteSummary();
+        const { jobTitle, client, matTotal, laborTotal, overhead, targetMarginPct, contractPrice, directCost, suggestedPrice, profit, netMarginPct } = summary;
 
         let rows = [];
 
@@ -1041,8 +1082,130 @@
         URL.revokeObjectURL(url);
     }
 
+    function buildReceiptMarkup() {
+        const summary = getQuoteSummary();
+        const { jobTitle, client, matTotal, laborTotal, overhead, targetMarginPct, contractPrice, directCost, suggestedPrice, profit, netMarginPct } = summary;
+        const quoteDate = new Date().toLocaleDateString('en-PH', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+
+        const materialRows = currentJobMaterials.length
+            ? currentJobMaterials.map(item => `
+                <tr>
+                    <td>${escapeHTML(item.name)}${item.size ? ` (${escapeHTML(item.size)})` : ''}</td>
+                    <td>${Number(item.qty).toLocaleString()} ${escapeHTML(item.isPerKg ? 'kg' : (item.unit || 'unit'))}</td>
+                    <td>${formatMoney(item.price)}</td>
+                    <td>${formatMoney(item.total)}</td>
+                </tr>
+            `).join('')
+            : '<tr><td colspan="4" style="padding:12px 0; text-align:center; color:#64748b;">No materials added</td></tr>';
+
+        const laborRows = currentJobLabor.length
+            ? currentJobLabor.map(item => `
+                <tr>
+                    <td>${escapeHTML(item.name)}</td>
+                    <td>${Number(item.hours).toLocaleString()} hrs</td>
+                    <td>${formatMoney(item.rate)}</td>
+                    <td>${formatMoney(item.total)}</td>
+                </tr>
+            `).join('')
+            : '<tr><td colspan="4" style="padding:12px 0; text-align:center; color:#64748b;">No labor operations added</td></tr>';
+
+        return `
+            <div style="font-family: Arial, sans-serif; max-width: 900px; margin: 0 auto; background: #ffffff; color: #111827; padding: 30px; border: 1px solid #e2e8f0; border-radius: 12px;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom: 2px solid #e2e8f0; padding-bottom: 16px; margin-bottom: 24px;">
+                    <div>
+                        <div style="font-size: 12px; letter-spacing: 1px; text-transform: uppercase; color: #64748b;">Machine Shop Estimate</div>
+                        <h2 style="margin: 6px 0 0; font-size: 28px; color: #1e293b;">${escapeHTML(jobTitle)}</h2>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 12px; color: #64748b;">Client</div>
+                        <div style="font-weight:700; font-size: 18px;">${escapeHTML(client)}</div>
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+                    <div style="padding: 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;">
+                        <div style="font-size: 12px; text-transform: uppercase; color: #64748b; margin-bottom: 8px;">Quote Details</div>
+                        <div style="font-size: 14px; margin-bottom: 6px;"><strong>Date:</strong> ${escapeHTML(quoteDate)}</div>
+                        <div style="font-size: 14px; margin-bottom: 6px;"><strong>Target Margin:</strong> ${targetMarginPct.toFixed(1)}%</div>
+                        <div style="font-size: 14px; margin-bottom: 6px;"><strong>Contract Price:</strong> ${formatMoney(contractPrice)}</div>
+                        <div style="font-size: 14px;"><strong>Suggested Price:</strong> ${formatMoney(suggestedPrice)}</div>
+                    </div>
+                    <div style="padding: 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;">
+                        <div style="font-size: 12px; text-transform: uppercase; color: #64748b; margin-bottom: 8px;">Profit Status</div>
+                        <div style="font-size: 14px; margin-bottom: 6px;"><strong>Projected Profit/Loss:</strong> <span style="color:${profit >= 0 ? '#16a34a' : '#dc2626'}; font-weight: 700;">${formatMoney(profit)}</span></div>
+                        <div style="font-size: 14px; margin-bottom: 6px;"><strong>Net Margin:</strong> ${netMarginPct.toFixed(1)}%</div>
+                        <div style="font-size: 14px;"><strong>Direct Cost:</strong> ${formatMoney(directCost)}</div>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 26px;">
+                    <h3 style="font-size: 18px; margin-bottom: 12px; color: #1e293b;">Materials</h3>
+                    <table style="width:100%; border-collapse: collapse; font-size:14px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+                        <thead>
+                            <tr style="background:#f8fafc;">
+                                <th style="text-align:left; padding:10px; border-bottom: 1px solid #e2e8f0;">Item</th>
+                                <th style="text-align:left; padding:10px; border-bottom: 1px solid #e2e8f0;">Qty</th>
+                                <th style="text-align:left; padding:10px; border-bottom: 1px solid #e2e8f0;">Unit Price</th>
+                                <th style="text-align:left; padding:10px; border-bottom: 1px solid #e2e8f0;">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>${materialRows}</tbody>
+                    </table>
+                </div>
+
+                <div style="margin-bottom: 26px;">
+                    <h3 style="font-size: 18px; margin-bottom: 12px; color: #1e293b;">Machining & Labor</h3>
+                    <table style="width:100%; border-collapse: collapse; font-size:14px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+                        <thead>
+                            <tr style="background:#f8fafc;">
+                                <th style="text-align:left; padding:10px; border-bottom: 1px solid #e2e8f0;">Operation</th>
+                                <th style="text-align:left; padding:10px; border-bottom: 1px solid #e2e8f0;">Hours</th>
+                                <th style="text-align:left; padding:10px; border-bottom: 1px solid #e2e8f0;">Rate</th>
+                                <th style="text-align:left; padding:10px; border-bottom: 1px solid #e2e8f0;">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>${laborRows}</tbody>
+                    </table>
+                </div>
+
+                <div style="border-top: 2px solid #e2e8f0; padding-top: 18px; margin-top: 20px;">
+                    <div style="display:flex; justify-content:space-between; font-size: 14px; margin-bottom: 8px;">
+                        <span>Materials Total</span>
+                        <strong>${formatMoney(matTotal)}</strong>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size: 14px; margin-bottom: 8px;">
+                        <span>Labor Total</span>
+                        <strong>${formatMoney(laborTotal)}</strong>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size: 14px; margin-bottom: 8px;">
+                        <span>Overhead / Setup</span>
+                        <strong>${formatMoney(overhead)}</strong>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size: 18px; font-weight: 700; margin-top: 12px; border-top: 2px solid #e2e8f0; padding-top: 12px;">
+                        <span>Grand Total</span>
+                        <span>${formatMoney(directCost)}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
     function printQuotePDF() {
-        window.print();
+        const receipt = buildReceiptMarkup();
+        const printWindow = window.open('', '_blank', 'width=1000,height=900');
+        if (!printWindow) {
+            alert('Your browser blocked the PDF window. Please allow popups and try again.');
+            return;
+        }
+
+        printWindow.document.write(`<!DOCTYPE html><html><head><title>Machine Shop Quote</title><style>body{margin:0;padding:24px;background:#f8fafc;}</style></head><body>${receipt}</body></html>`);
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => printWindow.print(), 300);
     }
 
     function exportQuotePNG() {
@@ -1094,6 +1257,7 @@
 
     function initializeApp() {
         try {
+            updateMaterialTypeUI();
             renderDropdowns();
             renderDatabaseTables();
             renderJobTables();
