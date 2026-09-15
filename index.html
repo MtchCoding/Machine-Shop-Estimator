@@ -263,6 +263,49 @@
             gap: 8px;
             flex-wrap: wrap;
         }
+
+        .export-actions {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .export-actions .btn {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+
+            .tabs,
+            .btn,
+            .card:not(#quotePrintArea),
+            .tab-content:not(.active),
+            .tab-btn,
+            header,
+            #database,
+            #estimator > .grid-2 > div:first-child,
+            #estimator > .grid-2 > div:last-child .card:not(#quotePrintArea) {
+                display: none !important;
+            }
+
+            .container {
+                max-width: 100%;
+            }
+
+            #quotePrintArea {
+                display: block !important;
+                box-shadow: none;
+                border: 1px solid #ccc;
+                margin: 0;
+                padding: 20px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -402,7 +445,7 @@
 
             <!-- Cost Summary Column -->
             <div>
-                <div class="card">
+                <div class="card" id="quotePrintArea">
                     <div class="card-title">4. Cost Breakdown & Profitability</div>
 
                     <div class="form-group">
@@ -459,9 +502,15 @@
                         </div>
                     </div>
 
-                    <div style="margin-top:15px; display:flex; gap:10px;">
-                        <button type="button" class="btn btn-success" style="flex:1;" onclick="exportSummaryCSV()">
-                            Export Job Quote CSV
+                    <div class="export-actions">
+                        <button type="button" class="btn btn-success" onclick="exportSummaryCSV()">
+                            Export CSV
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="printQuotePDF()">
+                            Save as PDF
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="exportQuotePNG()">
+                            Export PNG
                         </button>
                     </div>
                 </div>
@@ -990,6 +1039,48 @@
         document.body.removeChild(link);
 
         URL.revokeObjectURL(url);
+    }
+
+    function printQuotePDF() {
+        window.print();
+    }
+
+    function exportQuotePNG() {
+        const loaderScript = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+
+        const script = document.createElement('script');
+        script.src = loaderScript;
+        script.onload = () => {
+            const printable = document.getElementById('quotePrintArea');
+            const clone = printable.cloneNode(true);
+            clone.style.position = 'fixed';
+            clone.style.left = '-9999px';
+            clone.style.top = '0';
+            clone.style.width = '900px';
+            clone.style.background = '#fff';
+            clone.style.padding = '24px';
+            clone.style.borderRadius = '10px';
+            clone.style.boxShadow = 'none';
+            document.body.appendChild(clone);
+
+            html2canvas(clone, { backgroundColor: '#ffffff', scale: 2 }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'Machine_Shop_Quote.png';
+                link.href = canvas.toDataURL('image/png');
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                document.body.removeChild(clone);
+            }).catch(error => {
+                console.error('PNG export failed:', error);
+                alert('PNG export failed. Please try saving as PDF instead.');
+                document.body.removeChild(clone);
+            });
+        };
+        script.onerror = () => {
+            alert('PNG export is unavailable right now. Please use the Save as PDF option instead.');
+        };
+        document.body.appendChild(script);
     }
 
     function escapeHTML(value) {
