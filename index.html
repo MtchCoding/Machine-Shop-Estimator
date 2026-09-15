@@ -321,6 +321,7 @@
     <div class="tabs">
         <button type="button" class="tab-btn active" onclick="switchTab('estimator', this)">Job Cost Estimator</button>
         <button type="button" class="tab-btn" onclick="switchTab('database', this)">Rates & Materials Database</button>
+        <button type="button" class="tab-btn" onclick="switchTab('savedProjects', this); renderSavedProjects()">Saved Projects</button>
     </div>
 
     <!-- TAB 1: ESTIMATOR -->
@@ -511,6 +512,9 @@
                     </div>
 
                     <div class="export-actions">
+                        <button type="button" class="btn btn-success" id="saveProjectButton" onclick="saveProject()">
+                            Save Project
+                        </button>
                         <button type="button" class="btn btn-success" onclick="exportSummaryCSV()">
                             Export CSV
                         </button>
@@ -522,6 +526,28 @@
                         </button>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 3: SAVED PROJECTS -->
+    <div id="savedProjects" class="tab-content">
+        <div class="card">
+            <div class="card-title">Saved Projects</div>
+            <p style="color:var(--text-muted); margin-bottom:15px;">Projects are saved in this browser. You can reopen one, change its status, update its details, or delete it.</p>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Project</th>
+                            <th>Client</th>
+                            <th>Status</th>
+                            <th>Last Updated</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="savedProjectsTable"></tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -634,14 +660,20 @@
 
     let materials = loadStoredData('ms_materials', defaultMaterials);
     let laborRates = loadStoredData('ms_labor', defaultLabor);
+    let savedProjects = loadStoredData('ms_projects', []);
     let currentJobMaterials = [];
     let currentJobLabor = [];
+    let editingProjectId = null;
 
     function saveData() {
         localStorage.setItem('ms_materials', JSON.stringify(materials));
         localStorage.setItem('ms_labor', JSON.stringify(laborRates));
         renderDropdowns();
         renderDatabaseTables();
+    }
+
+    function saveProjectsData() {
+        localStorage.setItem('ms_projects', JSON.stringify(savedProjects));
     }
 
     function switchTab(tabId, button) {
@@ -653,6 +685,140 @@
         }
 
         document.getElementById(tabId).classList.add('active');
+    }
+
+    function getCurrentProjectData() {
+        return {
+            title: document.getElementById('jobTitle').value.trim() || 'Untitled Project',
+            client: document.getElementById('clientName').value.trim() || 'N/A',
+            status: document.getElementById('projectStatus').value || 'Unfinished',
+            contractPrice: document.getElementById('contractPrice').value || '0',
+            overheadCost: document.getElementById('overheadCost').value || '0',
+            targetMargin: document.getElementById('targetMargin').value || '0',
+            materials: currentJobMaterials.map(item => ({ ...item })),
+            labor: currentJobLabor.map(item => ({ ...item }))
+        };
+    }
+
+    function saveProject() {
+        const projectData = getCurrentProjectData();
+        const now = new Date().toISOString();
+        const existingProject = editingProjectId === null
+            ? null
+            : savedProjects.find(project => project.id === editingProjectId);
+
+        if (existingProject) {
+            Object.assign(existingProject, projectData, { updatedAt: now });
+        } else {
+            editingProjectId = Date.now();
+            savedProjects.push({
+                id: editingProjectId,
+                ...projectData,
+                createdAt: now,
+                updatedAt: now
+            });
+        }
+
+        saveProjectsData();
+        updateSaveProjectButton();
+        renderSavedProjects();
+        alert(existingProject ? 'Project updated.' : 'Project saved.');
+    }
+
+    function updateSaveProjectButton() {
+        const button = document.getElementById('saveProjectButton');
+        if (button) {
+            button.textContent = editingProjectId === null ? 'Save Project' : 'Update Project';
+        }
+    }
+
+    function formatProjectDate(value) {
+        if (!value) return '—';
+        return new Date(value).toLocaleDateString('en-PH', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+    }
+
+    function renderSavedProjects() {
+        const tbody = document.getElementById('savedProjectsTable');
+        if (!tbody) return;
+
+        if (savedProjects.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="empty-row">No saved projects yet.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = savedProjects
+            .slice()
+            .sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt))
+            .map(project => `
+                <tr>
+                    <td><strong>${escapeHTML(project.title)}</strong></td>
+                    <td>${escapeHTML(project.client)}</td>
+                    <td>
+                        <select aria-label="Status for ${escapeHTML(project.title)}" onchange="updateProjectStatus(${project.id}, this.value)">
+                            <option value="Unfinished" ${project.status !== 'Finished' ? 'selected' : ''}>Unfinished</option>
+                            <option value="Finished" ${project.status === 'Finished' ? 'selected' : ''}>Finished</option>
+                        </select>
+                    </td>
+                    <td>${formatProjectDate(project.updatedAt || project.createdAt)}</td>
+                    <td>
+                        <button type="button" class="btn btn-primary" onclick="loadProject(${project.id})">Edit</button>
+                        <button type="button" class="btn btn-danger" onclick="deleteProject(${project.id})">Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+    }
+
+    function updateProjectStatus(id, status) {
+        const project = savedProjects.find(item => item.id === id);
+        if (!project) return;
+
+        project.status = status === 'Finished' ? 'Finished' : 'Unfinished';
+        project.updatedAt = new Date().toISOString();
+        saveProjectsData();
+
+        if (editingProjectId === id) {
+            document.getElementById('projectStatus').value = project.status;
+        }
+        renderSavedProjects();
+    }
+
+    function loadProject(id) {
+        const project = savedProjects.find(item => item.id === id);
+        if (!project) return;
+
+        editingProjectId = id;
+        document.getElementById('jobTitle').value = project.title || '';
+        document.getElementById('clientName').value = project.client || '';
+        document.getElementById('projectStatus').value = project.status || 'Unfinished';
+        document.getElementById('contractPrice').value = project.contractPrice || '0';
+        document.getElementById('overheadCost').value = project.overheadCost || '0';
+        document.getElementById('targetMargin').value = project.targetMargin || '0';
+        currentJobMaterials = (project.materials || []).map(item => ({ ...item }));
+        currentJobLabor = (project.labor || []).map(item => ({ ...item }));
+
+        renderJobTables();
+        calculateJob();
+        updateSaveProjectButton();
+        switchTab('estimator', document.querySelector('.tab-btn'));
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function deleteProject(id) {
+        const project = savedProjects.find(item => item.id === id);
+        if (!project || !window.confirm(`Delete saved project "${project.title}"?`)) return;
+
+        savedProjects = savedProjects.filter(item => item.id !== id);
+        saveProjectsData();
+
+        if (editingProjectId === id) {
+            editingProjectId = null;
+            updateSaveProjectButton();
+        }
+        renderSavedProjects();
     }
 
     function formatMoney(value) {
@@ -1266,8 +1432,10 @@
             updateMaterialTypeUI();
             renderDropdowns();
             renderDatabaseTables();
+            renderSavedProjects();
             renderJobTables();
             calculateJob();
+            updateSaveProjectButton();
         } catch (error) {
             console.error('Estimator initialization failed:', error);
             const errorBox = document.getElementById('appError');
