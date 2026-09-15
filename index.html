@@ -257,6 +257,27 @@
             padding: 18px;
         }
 
+        .table-input {
+            min-width: 90px;
+            padding: 6px 8px;
+            font-size: 0.85rem;
+        }
+
+        .table-input-wide {
+            min-width: 160px;
+        }
+
+        .table-actions {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .btn-small {
+            padding: 6px 10px;
+            font-size: 0.8rem;
+        }
+
         .database-actions {
             margin-top: 10px;
             display: flex;
@@ -725,6 +746,7 @@
     let currentJobMaterials = [];
     let currentJobLabor = [];
     let currentJobServices = [];
+    let editingRow = null;
     let editingProjectId = null;
 
     function saveData() {
@@ -1170,61 +1192,72 @@
     }
 
     function editJobMaterial(idx) {
-        const material = currentJobMaterials[idx];
-        if (!material) return;
-
-        const qty = parseFloat(window.prompt('Quantity:', material.qty));
-        const price = parseFloat(window.prompt('Unit price (PHP):', material.price));
-
-        if (isNaN(qty) || qty <= 0 || isNaN(price) || price < 0) {
-            return alert('Please enter a positive quantity and a valid unit price.');
-        }
-
-        material.qty = qty;
-        material.price = price;
-        material.total = qty * price;
+        if (!currentJobMaterials[idx]) return;
+        editingRow = { type: 'material', idx };
         renderJobTables();
-        calculateJob();
     }
 
     function editJobLabor(idx) {
-        const labor = currentJobLabor[idx];
-        if (!labor) return;
+        if (!currentJobLabor[idx]) return;
+        editingRow = { type: 'labor', idx };
+        renderJobTables();
+    }
 
-        const hours = parseFloat(window.prompt('Estimated hours:', labor.hours));
-        const rate = parseFloat(window.prompt('Hourly rate (PHP):', labor.rate));
+    function editJobService(idx) {
+        if (!currentJobServices[idx]) return;
+        editingRow = { type: 'service', idx };
+        renderJobTables();
+    }
 
-        if (isNaN(hours) || hours <= 0 || isNaN(rate) || rate < 0) {
-            return alert('Please enter positive hours and a valid hourly rate.');
+    function saveEditedRow() {
+        if (!editingRow) return;
+
+        if (editingRow.type === 'material') {
+            const material = currentJobMaterials[editingRow.idx];
+            const qty = parseFloat(document.getElementById('editMaterialQty').value);
+            const price = parseFloat(document.getElementById('editMaterialPrice').value);
+            if (isNaN(qty) || qty <= 0 || isNaN(price) || price < 0) {
+                return alert('Please enter a positive quantity and a valid unit price.');
+            }
+            material.qty = qty;
+            material.price = price;
+            material.total = qty * price;
         }
 
-        labor.hours = hours;
-        labor.rate = rate;
-        labor.total = hours * rate;
+        if (editingRow.type === 'labor') {
+            const labor = currentJobLabor[editingRow.idx];
+            const hours = parseFloat(document.getElementById('editLaborHours').value);
+            const rate = parseFloat(document.getElementById('editLaborRate').value);
+            if (isNaN(hours) || hours <= 0 || isNaN(rate) || rate < 0) {
+                return alert('Please enter positive hours and a valid hourly rate.');
+            }
+            labor.hours = hours;
+            labor.rate = rate;
+            labor.total = hours * rate;
+        }
+
+        if (editingRow.type === 'service') {
+            const service = currentJobServices[editingRow.idx];
+            const name = document.getElementById('editServiceName').value.trim();
+            const qty = parseFloat(document.getElementById('editServiceQty').value);
+            const unitPrice = parseFloat(document.getElementById('editServicePrice').value);
+            if (!name || isNaN(qty) || qty <= 0 || isNaN(unitPrice) || unitPrice < 0) {
+                return alert('Please enter a service description, a positive quantity, and a valid unit price.');
+            }
+            service.name = name;
+            service.qty = qty;
+            service.unitPrice = unitPrice;
+            service.total = qty * unitPrice;
+        }
+
+        editingRow = null;
         renderJobTables();
         calculateJob();
     }
 
-    function editJobService(idx) {
-        const service = currentJobServices[idx];
-        if (!service) return;
-
-        const name = window.prompt('Service description:', service.name);
-        if (name === null) return;
-
-        const qty = parseFloat(window.prompt('Quantity:', service.qty));
-        const unitPrice = parseFloat(window.prompt('Unit price (PHP):', service.unitPrice));
-
-        if (!name.trim() || isNaN(qty) || qty <= 0 || isNaN(unitPrice) || unitPrice < 0) {
-            return alert('Please enter a service description, a positive quantity, and a valid unit price.');
-        }
-
-        service.name = name.trim();
-        service.qty = qty;
-        service.unitPrice = unitPrice;
-        service.total = qty * unitPrice;
+    function cancelEditedRow() {
+        editingRow = null;
         renderJobTables();
-        calculateJob();
     }
 
     function renderJobTables() {
@@ -1235,19 +1268,16 @@
         } else {
             materialTbody.innerHTML = currentJobMaterials.map((m, i) => {
                 const sizeLabel = m.size ? ` (${escapeHTML(m.size)})` : '';
-                const pricingLabel = m.isPerKg ? ' per kg' : ` / ${escapeHTML(m.unit || 'unit')}`;
+                const isEditing = editingRow && editingRow.type === 'material' && editingRow.idx === i;
                 return `
                     <tr>
                         <td>${escapeHTML(m.name)}${sizeLabel}</td>
-                        <td>${Number(m.qty).toLocaleString()} ${escapeHTML(m.isPerKg ? 'kg' : (m.unit || 'unit'))}</td>
-                        <td>${formatMoney(m.total)}</td>
+                        <td>${isEditing ? `<input class="table-input" id="editMaterialQty" type="number" min="0.1" step="any" value="${m.qty}">` : `${Number(m.qty).toLocaleString()} ${escapeHTML(m.isPerKg ? 'kg' : (m.unit || 'unit'))}`}</td>
+                        <td>${isEditing ? `<input class="table-input" id="editMaterialPrice" type="number" min="0" step="0.01" value="${m.price}">` : formatMoney(m.total)}</td>
                         <td>
-                            <button type="button" class="btn btn-primary" onclick="editJobMaterial(${i})">
-                                Edit
-                            </button>
-                            <button type="button" class="btn btn-danger" onclick="removeJobMaterial(${i})">
-                                X
-                            </button>
+                            <div class="table-actions">
+                                ${isEditing ? '<button type="button" class="btn btn-success btn-small" onclick="saveEditedRow()">Save</button><button type="button" class="btn btn-small" onclick="cancelEditedRow()">Cancel</button>' : `<button type="button" class="btn btn-primary btn-small" onclick="editJobMaterial(${i})">Edit</button><button type="button" class="btn btn-danger btn-small" onclick="removeJobMaterial(${i})">X</button>`}
+                            </div>
                         </td>
                     </tr>
                 `;
@@ -1259,21 +1289,21 @@
         if (currentJobLabor.length === 0) {
             laborTbody.innerHTML = '<tr><td colspan="4" class="empty-row">No operations added yet.</td></tr>';
         } else {
-            laborTbody.innerHTML = currentJobLabor.map((l, i) => `
+            laborTbody.innerHTML = currentJobLabor.map((l, i) => {
+                const isEditing = editingRow && editingRow.type === 'labor' && editingRow.idx === i;
+                return `
                 <tr>
                     <td>${escapeHTML(l.name)}</td>
-                    <td>${Number(l.hours).toLocaleString()} hrs</td>
-                    <td>${formatMoney(l.total)}</td>
+                    <td>${isEditing ? '<input class="table-input" id="editLaborHours" type="number" min="0.1" step="any" value="' + l.hours + '">' : Number(l.hours).toLocaleString() + ' hrs'}</td>
+                    <td>${isEditing ? '<input class="table-input" id="editLaborRate" type="number" min="0" step="0.01" value="' + l.rate + '">' : formatMoney(l.total)}</td>
                     <td>
-                        <button type="button" class="btn btn-primary" onclick="editJobLabor(${i})">
-                            Edit
-                        </button>
-                        <button type="button" class="btn btn-danger" onclick="removeJobLabor(${i})">
-                            X
-                        </button>
+                        <div class="table-actions">
+                            ${isEditing ? '<button type="button" class="btn btn-success btn-small" onclick="saveEditedRow()">Save</button><button type="button" class="btn btn-small" onclick="cancelEditedRow()">Cancel</button>' : `<button type="button" class="btn btn-primary btn-small" onclick="editJobLabor(${i})">Edit</button><button type="button" class="btn btn-danger btn-small" onclick="removeJobLabor(${i})">X</button>`}
+                        </div>
                     </td>
                 </tr>
-            `).join('');
+            `;
+            }).join('');
         }
 
         const serviceTbody = document.getElementById('jobServicesTable');
@@ -1281,22 +1311,22 @@
         if (currentJobServices.length === 0) {
             serviceTbody.innerHTML = '<tr><td colspan="5" class="empty-row">No services added yet.</td></tr>';
         } else {
-            serviceTbody.innerHTML = currentJobServices.map((service, i) => `
+            serviceTbody.innerHTML = currentJobServices.map((service, i) => {
+                const isEditing = editingRow && editingRow.type === 'service' && editingRow.idx === i;
+                return `
                 <tr>
-                    <td>${escapeHTML(service.name)}</td>
-                    <td>${Number(service.qty).toLocaleString()}</td>
-                    <td>${formatMoney(service.unitPrice)}</td>
-                    <td>${formatMoney(service.total)}</td>
+                    <td>${isEditing ? '<input class="table-input table-input-wide" id="editServiceName" type="text" value="' + escapeHTML(service.name) + '">' : escapeHTML(service.name)}</td>
+                    <td>${isEditing ? '<input class="table-input" id="editServiceQty" type="number" min="0.1" step="any" value="' + service.qty + '">' : Number(service.qty).toLocaleString()}</td>
+                    <td>${isEditing ? '<input class="table-input" id="editServicePrice" type="number" min="0" step="0.01" value="' + service.unitPrice + '">' : formatMoney(service.unitPrice)}</td>
+                    <td>${isEditing ? 'Update after save' : formatMoney(service.total)}</td>
                     <td>
-                        <button type="button" class="btn btn-primary" onclick="editJobService(${i})">
-                            Edit
-                        </button>
-                        <button type="button" class="btn btn-danger" onclick="removeJobService(${i})">
-                            X
-                        </button>
+                        <div class="table-actions">
+                            ${isEditing ? '<button type="button" class="btn btn-success btn-small" onclick="saveEditedRow()">Save</button><button type="button" class="btn btn-small" onclick="cancelEditedRow()">Cancel</button>' : `<button type="button" class="btn btn-primary btn-small" onclick="editJobService(${i})">Edit</button><button type="button" class="btn btn-danger btn-small" onclick="removeJobService(${i})">X</button>`}
+                        </div>
                     </td>
                 </tr>
-            `).join('');
+            `;
+            }).join('');
         }
     }
 
