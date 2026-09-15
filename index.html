@@ -709,6 +709,35 @@
                 </div>
             </div>
         </div>
+
+        <div class="card" style="margin-top: 20px;">
+            <div class="card-title">Service Rates Vault (₱)</div>
+
+            <div class="form-group">
+                <label for="newServiceName">Service Name</label>
+                <input type="text" id="newServiceName" placeholder="e.g. Surface Finishing, Polishing, Assembly">
+            </div>
+
+            <div class="form-group">
+                <label for="newServiceRate">Service Rate (₱)</label>
+                <input type="number" id="newServiceRate" placeholder="0.00" min="0" step="0.01">
+            </div>
+
+            <button type="button" class="btn btn-primary" onclick="addServiceRate()">Save Service Rate</button>
+
+            <div class="table-wrap">
+                <table style="margin-top:20px;">
+                    <thead>
+                        <tr>
+                            <th>Service</th>
+                            <th>Rate (₱)</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dbServiceTable"></tbody>
+                </table>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -728,6 +757,13 @@
         { id: 5, name: 'Bench Work & Surface Grinding', rate: 400 }
     ];
 
+    const defaultServices = [
+        { id: 1, name: 'Surface Finishing', rate: 800 },
+        { id: 2, name: 'Polishing', rate: 600 },
+        { id: 3, name: 'Inspection & QC', rate: 500 },
+        { id: 4, name: 'Assembly & Fitting', rate: 700 }
+    ];
+
     function loadStoredData(key, fallback) {
         try {
             const stored = localStorage.getItem(key);
@@ -742,6 +778,7 @@
 
     let materials = loadStoredData('ms_materials', defaultMaterials);
     let laborRates = loadStoredData('ms_labor', defaultLabor);
+    let serviceRates = loadStoredData('ms_services', defaultServices);
     let savedProjects = loadStoredData('ms_projects', []);
     let currentJobMaterials = [];
     let currentJobLabor = [];
@@ -752,6 +789,7 @@
     function saveData() {
         localStorage.setItem('ms_materials', JSON.stringify(materials));
         localStorage.setItem('ms_labor', JSON.stringify(laborRates));
+        localStorage.setItem('ms_services', JSON.stringify(serviceRates));
         renderDropdowns();
         renderDatabaseTables();
     }
@@ -988,6 +1026,24 @@
                 </tr>
             `).join('');
         }
+
+        const serviceTbody = document.getElementById('dbServiceTable');
+
+        if (serviceRates.length === 0) {
+            serviceTbody.innerHTML = '<tr><td colspan="3" class="empty-row">No service rates saved.</td></tr>';
+        } else {
+            serviceTbody.innerHTML = serviceRates.map(s => `
+                <tr>
+                    <td>${escapeHTML(s.name)}</td>
+                    <td>${formatMoney(s.rate)}</td>
+                    <td>
+                        <button type="button" class="btn btn-danger" onclick="deleteServiceRate(${s.id})">
+                            Delete
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
     }
 
     function addMaterialRate() {
@@ -1048,6 +1104,34 @@
         laborRates = laborRates.filter(l => l.id !== id);
         saveData();
         currentJobLabor = currentJobLabor.filter(l => l.id !== id);
+        renderJobTables();
+        calculateJob();
+    }
+
+    function addServiceRate() {
+        const name = document.getElementById('newServiceName').value.trim();
+        const rate = parseFloat(document.getElementById('newServiceRate').value);
+
+        if (!name || isNaN(rate) || rate < 0) {
+            return alert('Please enter a valid service name and rate.');
+        }
+
+        serviceRates.push({
+            id: Date.now(),
+            name,
+            rate
+        });
+
+        saveData();
+
+        document.getElementById('newServiceName').value = '';
+        document.getElementById('newServiceRate').value = '';
+    }
+
+    function deleteServiceRate(id) {
+        serviceRates = serviceRates.filter(s => s.id !== id);
+        saveData();
+        currentJobServices = currentJobServices.filter(s => s.id !== id);
         renderJobTables();
         calculateJob();
     }
