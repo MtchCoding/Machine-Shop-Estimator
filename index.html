@@ -354,6 +354,11 @@
                         <label for="contractPrice">Contract Price Offered / Target (₱)</label>
                         <input type="number" id="contractPrice" value="0" min="0" step="0.01" oninput="calculateJob()">
                     </div>
+
+                    <div class="form-group">
+                        <label for="downpayment">Client Downpayment (₱)</label>
+                        <input type="number" id="downpayment" value="0" min="0" step="0.01" oninput="calculateJob()">
+                    </div>
                 </div>
 
                 <!-- Materials Section -->
@@ -450,12 +455,53 @@
                         </table>
                     </div>
                 </div>
+
+                <!-- Services Section -->
+                <div class="card">
+                    <div class="card-title">4. Services</div>
+
+                    <div class="form-group">
+                        <label for="serviceName">Service Description</label>
+                        <input type="text" id="serviceName" placeholder="e.g. Piston boring, polishing, or finishing">
+                    </div>
+
+                    <div style="display:flex; gap:10px; align-items:flex-end;">
+                        <div class="form-group" style="flex:1;">
+                            <label for="serviceQty">Quantity</label>
+                            <input type="number" id="serviceQty" value="1" min="0.1" step="any">
+                        </div>
+
+                        <div class="form-group" style="flex:1;">
+                            <label for="serviceUnitPrice">Unit Price (₱)</label>
+                            <input type="number" id="serviceUnitPrice" value="0" min="0" step="0.01">
+                        </div>
+
+                        <div class="form-group" style="align-self:flex-end;">
+                            <button type="button" class="btn btn-primary" onclick="addServiceToJob()">Add Service</button>
+                        </div>
+                    </div>
+
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Service</th>
+                                    <th>Qty</th>
+                                    <th>Unit Price</th>
+                                    <th>Total</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="jobServicesTable"></tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
 
             <!-- Cost Summary Column -->
             <div>
                 <div class="card" id="quotePrintArea">
-                    <div class="card-title">4. Cost Breakdown & Profitability</div>
+                    <div class="card-title">5. Cost Breakdown & Profitability</div>
 
                     <div class="form-group">
                         <label for="overheadCost">Overhead / Setup Fee (₱)</label>
@@ -479,6 +525,11 @@
                         </div>
 
                         <div class="summary-row">
+                            <span>Total Services:</span>
+                            <span id="sumServices">₱0.00</span>
+                        </div>
+
+                        <div class="summary-row">
                             <span>Overhead / Setup:</span>
                             <span id="sumOverhead">₱0.00</span>
                         </div>
@@ -496,6 +547,16 @@
                         <div class="summary-row">
                             <span>Entered Contract Price:</span>
                             <span id="sumContractPrice">₱0.00</span>
+                        </div>
+
+                        <div class="summary-row">
+                            <span>Client Downpayment:</span>
+                            <span id="sumDownpayment">₱0.00</span>
+                        </div>
+
+                        <div class="summary-row total">
+                            <span>Balance Due:</span>
+                            <span id="sumBalanceDue">₱0.00</span>
                         </div>
 
                         <div class="summary-row total">
@@ -663,6 +724,7 @@
     let savedProjects = loadStoredData('ms_projects', []);
     let currentJobMaterials = [];
     let currentJobLabor = [];
+    let currentJobServices = [];
     let editingProjectId = null;
 
     function saveData() {
@@ -693,10 +755,12 @@
             client: document.getElementById('clientName').value.trim() || 'N/A',
             status: document.getElementById('projectStatus').value || 'Unfinished',
             contractPrice: document.getElementById('contractPrice').value || '0',
+            downpayment: document.getElementById('downpayment').value || '0',
             overheadCost: document.getElementById('overheadCost').value || '0',
             targetMargin: document.getElementById('targetMargin').value || '0',
             materials: currentJobMaterials.map(item => ({ ...item })),
-            labor: currentJobLabor.map(item => ({ ...item }))
+            labor: currentJobLabor.map(item => ({ ...item })),
+            services: currentJobServices.map(item => ({ ...item }))
         };
     }
 
@@ -795,10 +859,12 @@
         document.getElementById('clientName').value = project.client || '';
         document.getElementById('projectStatus').value = project.status || 'Unfinished';
         document.getElementById('contractPrice').value = project.contractPrice || '0';
+        document.getElementById('downpayment').value = project.downpayment || '0';
         document.getElementById('overheadCost').value = project.overheadCost || '0';
         document.getElementById('targetMargin').value = project.targetMargin || '0';
         currentJobMaterials = (project.materials || []).map(item => ({ ...item }));
         currentJobLabor = (project.labor || []).map(item => ({ ...item }));
+        currentJobServices = (project.services || []).map(item => ({ ...item }));
 
         renderJobTables();
         calculateJob();
@@ -1073,6 +1139,36 @@
         calculateJob();
     }
 
+    function addServiceToJob() {
+        const name = document.getElementById('serviceName').value.trim();
+        const qty = parseFloat(document.getElementById('serviceQty').value);
+        const unitPrice = parseFloat(document.getElementById('serviceUnitPrice').value);
+
+        if (!name || isNaN(qty) || qty <= 0 || isNaN(unitPrice) || unitPrice < 0) {
+            return alert('Please enter a service name, a positive quantity, and a valid unit price.');
+        }
+
+        currentJobServices.push({
+            id: Date.now(),
+            name,
+            qty,
+            unitPrice,
+            total: qty * unitPrice
+        });
+
+        document.getElementById('serviceName').value = '';
+        document.getElementById('serviceQty').value = '1';
+        document.getElementById('serviceUnitPrice').value = '0';
+        renderJobTables();
+        calculateJob();
+    }
+
+    function removeJobService(idx) {
+        currentJobServices.splice(idx, 1);
+        renderJobTables();
+        calculateJob();
+    }
+
     function renderJobTables() {
         const materialTbody = document.getElementById('jobMaterialsTable');
 
@@ -1115,27 +1211,53 @@
                 </tr>
             `).join('');
         }
+
+        const serviceTbody = document.getElementById('jobServicesTable');
+
+        if (currentJobServices.length === 0) {
+            serviceTbody.innerHTML = '<tr><td colspan="5" class="empty-row">No services added yet.</td></tr>';
+        } else {
+            serviceTbody.innerHTML = currentJobServices.map((service, i) => `
+                <tr>
+                    <td>${escapeHTML(service.name)}</td>
+                    <td>${Number(service.qty).toLocaleString()}</td>
+                    <td>${formatMoney(service.unitPrice)}</td>
+                    <td>${formatMoney(service.total)}</td>
+                    <td>
+                        <button type="button" class="btn btn-danger" onclick="removeJobService(${i})">
+                            X
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
     }
 
     function calculateJob() {
         const matTotal = currentJobMaterials.reduce((acc, curr) => acc + Number(curr.total || 0), 0);
         const laborTotal = currentJobLabor.reduce((acc, curr) => acc + Number(curr.total || 0), 0);
+        const servicesTotal = currentJobServices.reduce((acc, curr) => acc + Number(curr.total || 0), 0);
 
         const overhead = parseFloat(document.getElementById('overheadCost').value) || 0;
         const targetMarginPct = parseFloat(document.getElementById('targetMargin').value) || 0;
         const contractPrice = parseFloat(document.getElementById('contractPrice').value) || 0;
+        const downpayment = parseFloat(document.getElementById('downpayment').value) || 0;
+        const balanceDue = contractPrice - downpayment;
 
-        const directCost = matTotal + laborTotal + overhead;
+        const directCost = matTotal + laborTotal + servicesTotal + overhead;
         const suggestedPrice = directCost * (1 + (targetMarginPct / 100));
         const profit = contractPrice - directCost;
         const netMarginPct = contractPrice > 0 ? (profit / contractPrice) * 100 : 0;
 
         document.getElementById('sumMaterial').innerText = formatMoney(matTotal);
         document.getElementById('sumLabor').innerText = formatMoney(laborTotal);
+        document.getElementById('sumServices').innerText = formatMoney(servicesTotal);
         document.getElementById('sumOverhead').innerText = formatMoney(overhead);
         document.getElementById('sumDirectCost').innerText = formatMoney(directCost);
         document.getElementById('sumSuggestedPrice').innerText = formatMoney(suggestedPrice);
         document.getElementById('sumContractPrice').innerText = formatMoney(contractPrice);
+        document.getElementById('sumDownpayment').innerText = formatMoney(downpayment);
+        document.getElementById('sumBalanceDue').innerText = formatMoney(balanceDue);
 
         const profitEl = document.getElementById('sumProfit');
         profitEl.innerText = formatMoney(profit);
@@ -1162,10 +1284,13 @@
         const projectStatus = document.getElementById('projectStatus').value || 'Unfinished';
         const matTotal = currentJobMaterials.reduce((acc, curr) => acc + Number(curr.total || 0), 0);
         const laborTotal = currentJobLabor.reduce((acc, curr) => acc + Number(curr.total || 0), 0);
+        const servicesTotal = currentJobServices.reduce((acc, curr) => acc + Number(curr.total || 0), 0);
         const overhead = parseFloat(document.getElementById('overheadCost').value) || 0;
         const targetMarginPct = parseFloat(document.getElementById('targetMargin').value) || 0;
         const contractPrice = parseFloat(document.getElementById('contractPrice').value) || 0;
-        const directCost = matTotal + laborTotal + overhead;
+        const downpayment = parseFloat(document.getElementById('downpayment').value) || 0;
+        const balanceDue = contractPrice - downpayment;
+        const directCost = matTotal + laborTotal + servicesTotal + overhead;
         const suggestedPrice = directCost * (1 + targetMarginPct / 100);
         const profit = contractPrice - directCost;
         const netMarginPct = contractPrice > 0 ? (profit / contractPrice) * 100 : 0;
@@ -1176,9 +1301,12 @@
             projectStatus,
             matTotal,
             laborTotal,
+            servicesTotal,
             overhead,
             targetMarginPct,
             contractPrice,
+            downpayment,
+            balanceDue,
             directCost,
             suggestedPrice,
             profit,
@@ -1188,7 +1316,7 @@
 
     function exportSummaryCSV() {
         const summary = getQuoteSummary();
-        const { jobTitle, client, projectStatus, matTotal, laborTotal, overhead, targetMarginPct, contractPrice, directCost, suggestedPrice, profit, netMarginPct } = summary;
+        const { jobTitle, client, projectStatus, matTotal, laborTotal, servicesTotal, overhead, targetMarginPct, contractPrice, downpayment, balanceDue, directCost, suggestedPrice, profit, netMarginPct } = summary;
 
         let rows = [];
 
@@ -1225,14 +1353,30 @@
         });
 
         rows.push([]);
+        rows.push(['SERVICES']);
+        rows.push(['Service', 'Qty', 'Unit Price (PHP)', 'Total Cost (PHP)']);
+
+        currentJobServices.forEach(service => {
+            rows.push([
+                service.name,
+                service.qty,
+                Number(service.unitPrice).toFixed(2),
+                Number(service.total).toFixed(2)
+            ]);
+        });
+
+        rows.push([]);
         rows.push(['COST SUMMARY']);
         rows.push(['Total Materials', matTotal.toFixed(2)]);
         rows.push(['Total Labor', laborTotal.toFixed(2)]);
+        rows.push(['Total Services', servicesTotal.toFixed(2)]);
         rows.push(['Overhead / Setup', overhead.toFixed(2)]);
         rows.push(['Direct Cost', directCost.toFixed(2)]);
         rows.push(['Target Profit Margin (%)', targetMarginPct.toFixed(1)]);
         rows.push(['Suggested Quote Price', suggestedPrice.toFixed(2)]);
         rows.push(['Contract Price', contractPrice.toFixed(2)]);
+        rows.push(['Client Downpayment', downpayment.toFixed(2)]);
+        rows.push(['Balance Due', balanceDue.toFixed(2)]);
         rows.push(['Projected Profit / Loss', profit.toFixed(2)]);
         rows.push(['Net Profit Margin (%)', netMarginPct.toFixed(1)]);
 
@@ -1261,7 +1405,7 @@
 
     function buildReceiptMarkup() {
         const summary = getQuoteSummary();
-        const { jobTitle, client, projectStatus, matTotal, laborTotal, overhead, targetMarginPct, contractPrice, directCost, suggestedPrice } = summary;
+        const { jobTitle, client, projectStatus, matTotal, laborTotal, servicesTotal, overhead, targetMarginPct, contractPrice, downpayment, balanceDue, directCost, suggestedPrice } = summary;
         const quoteDate = new Date().toLocaleDateString('en-PH', {
             year: 'numeric',
             month: 'long',
@@ -1290,6 +1434,17 @@
             `).join('')
             : '<tr><td colspan="4" style="padding:12px 0; text-align:center; color:#64748b;">No labor operations added</td></tr>';
 
+        const serviceRows = currentJobServices.length
+            ? currentJobServices.map(item => `
+                <tr>
+                    <td>${escapeHTML(item.name)}</td>
+                    <td>${Number(item.qty).toLocaleString()}</td>
+                    <td>${formatMoney(item.unitPrice)}</td>
+                    <td>${formatMoney(item.total)}</td>
+                </tr>
+            `).join('')
+            : '<tr><td colspan="4" style="padding:12px 0; text-align:center; color:#64748b;">No services added</td></tr>';
+
         return `
             <div style="font-family: Arial, sans-serif; max-width: 900px; margin: 0 auto; background: #ffffff; color: #111827; padding: 30px; border: 1px solid #e2e8f0; border-radius: 12px;">
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom: 2px solid #e2e8f0; padding-bottom: 16px; margin-bottom: 24px;">
@@ -1310,6 +1465,8 @@
                         <div style="font-size: 14px; margin-bottom: 6px;"><strong>Status:</strong> <span style="font-weight: 700; color: ${projectStatus === 'Finished' ? '#16a34a' : '#b45309'};">${escapeHTML(projectStatus)}</span></div>
                         <div style="font-size: 14px; margin-bottom: 6px;"><strong>Target Margin:</strong> ${targetMarginPct.toFixed(1)}%</div>
                         <div style="font-size: 14px; margin-bottom: 6px;"><strong>Contract Price:</strong> ${formatMoney(contractPrice)}</div>
+                        <div style="font-size: 14px; margin-bottom: 6px;"><strong>Downpayment:</strong> ${formatMoney(downpayment)}</div>
+                        <div style="font-size: 14px;"><strong>Balance Due:</strong> ${formatMoney(balanceDue)}</div>
                         <div style="font-size: 14px;"><strong>Suggested Price:</strong> ${formatMoney(suggestedPrice)}</div>
                     </div>
                 </div>
@@ -1344,6 +1501,21 @@
                     </table>
                 </div>
 
+                <div style="margin-bottom: 26px;">
+                    <h3 style="font-size: 18px; margin-bottom: 12px; color: #1e293b;">Services</h3>
+                    <table style="width:100%; border-collapse: collapse; font-size:14px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+                        <thead>
+                            <tr style="background:#f8fafc;">
+                                <th style="text-align:left; padding:10px; border-bottom: 1px solid #e2e8f0;">Service</th>
+                                <th style="text-align:left; padding:10px; border-bottom: 1px solid #e2e8f0;">Qty</th>
+                                <th style="text-align:left; padding:10px; border-bottom: 1px solid #e2e8f0;">Unit Price</th>
+                                <th style="text-align:left; padding:10px; border-bottom: 1px solid #e2e8f0;">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>${serviceRows}</tbody>
+                    </table>
+                </div>
+
                 <div style="border-top: 2px solid #e2e8f0; padding-top: 18px; margin-top: 20px;">
                     <div style="display:flex; justify-content:space-between; font-size: 14px; margin-bottom: 8px;">
                         <span>Materials Total</span>
@@ -1352,6 +1524,18 @@
                     <div style="display:flex; justify-content:space-between; font-size: 14px; margin-bottom: 8px;">
                         <span>Labor Total</span>
                         <strong>${formatMoney(laborTotal)}</strong>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size: 14px; margin-bottom: 8px;">
+                        <span>Services Total</span>
+                        <strong>${formatMoney(servicesTotal)}</strong>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size: 14px; margin-bottom: 8px;">
+                        <span>Downpayment Received</span>
+                        <strong>${formatMoney(downpayment)}</strong>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size: 14px; margin-bottom: 8px;">
+                        <span>Balance Due</span>
+                        <strong>${formatMoney(balanceDue)}</strong>
                     </div>
                     <div style="display:flex; justify-content:space-between; font-size: 14px; margin-bottom: 8px;">
                         <span>Overhead / Setup</span>
