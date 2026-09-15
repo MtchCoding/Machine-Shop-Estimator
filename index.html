@@ -1084,7 +1084,7 @@
 
     function buildReceiptMarkup() {
         const summary = getQuoteSummary();
-        const { jobTitle, client, matTotal, laborTotal, overhead, targetMarginPct, contractPrice, directCost, suggestedPrice, profit, netMarginPct } = summary;
+        const { jobTitle, client, matTotal, laborTotal, overhead, targetMarginPct, contractPrice, directCost, suggestedPrice } = summary;
         const quoteDate = new Date().toLocaleDateString('en-PH', {
             year: 'numeric',
             month: 'long',
@@ -1126,19 +1126,13 @@
                     </div>
                 </div>
 
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+                <div style="display:grid; grid-template-columns: 1fr; gap: 24px; margin-bottom: 24px;">
                     <div style="padding: 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;">
                         <div style="font-size: 12px; text-transform: uppercase; color: #64748b; margin-bottom: 8px;">Quote Details</div>
                         <div style="font-size: 14px; margin-bottom: 6px;"><strong>Date:</strong> ${escapeHTML(quoteDate)}</div>
                         <div style="font-size: 14px; margin-bottom: 6px;"><strong>Target Margin:</strong> ${targetMarginPct.toFixed(1)}%</div>
                         <div style="font-size: 14px; margin-bottom: 6px;"><strong>Contract Price:</strong> ${formatMoney(contractPrice)}</div>
                         <div style="font-size: 14px;"><strong>Suggested Price:</strong> ${formatMoney(suggestedPrice)}</div>
-                    </div>
-                    <div style="padding: 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;">
-                        <div style="font-size: 12px; text-transform: uppercase; color: #64748b; margin-bottom: 8px;">Profit Status</div>
-                        <div style="font-size: 14px; margin-bottom: 6px;"><strong>Projected Profit/Loss:</strong> <span style="color:${profit >= 0 ? '#16a34a' : '#dc2626'}; font-weight: 700;">${formatMoney(profit)}</span></div>
-                        <div style="font-size: 14px; margin-bottom: 6px;"><strong>Net Margin:</strong> ${netMarginPct.toFixed(1)}%</div>
-                        <div style="font-size: 14px;"><strong>Direct Cost:</strong> ${formatMoney(directCost)}</div>
                     </div>
                 </div>
 
