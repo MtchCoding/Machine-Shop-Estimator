@@ -1169,6 +1169,64 @@
         calculateJob();
     }
 
+    function editJobMaterial(idx) {
+        const material = currentJobMaterials[idx];
+        if (!material) return;
+
+        const qty = parseFloat(window.prompt('Quantity:', material.qty));
+        const price = parseFloat(window.prompt('Unit price (PHP):', material.price));
+
+        if (isNaN(qty) || qty <= 0 || isNaN(price) || price < 0) {
+            return alert('Please enter a positive quantity and a valid unit price.');
+        }
+
+        material.qty = qty;
+        material.price = price;
+        material.total = qty * price;
+        renderJobTables();
+        calculateJob();
+    }
+
+    function editJobLabor(idx) {
+        const labor = currentJobLabor[idx];
+        if (!labor) return;
+
+        const hours = parseFloat(window.prompt('Estimated hours:', labor.hours));
+        const rate = parseFloat(window.prompt('Hourly rate (PHP):', labor.rate));
+
+        if (isNaN(hours) || hours <= 0 || isNaN(rate) || rate < 0) {
+            return alert('Please enter positive hours and a valid hourly rate.');
+        }
+
+        labor.hours = hours;
+        labor.rate = rate;
+        labor.total = hours * rate;
+        renderJobTables();
+        calculateJob();
+    }
+
+    function editJobService(idx) {
+        const service = currentJobServices[idx];
+        if (!service) return;
+
+        const name = window.prompt('Service description:', service.name);
+        if (name === null) return;
+
+        const qty = parseFloat(window.prompt('Quantity:', service.qty));
+        const unitPrice = parseFloat(window.prompt('Unit price (PHP):', service.unitPrice));
+
+        if (!name.trim() || isNaN(qty) || qty <= 0 || isNaN(unitPrice) || unitPrice < 0) {
+            return alert('Please enter a service description, a positive quantity, and a valid unit price.');
+        }
+
+        service.name = name.trim();
+        service.qty = qty;
+        service.unitPrice = unitPrice;
+        service.total = qty * unitPrice;
+        renderJobTables();
+        calculateJob();
+    }
+
     function renderJobTables() {
         const materialTbody = document.getElementById('jobMaterialsTable');
 
@@ -1184,6 +1242,9 @@
                         <td>${Number(m.qty).toLocaleString()} ${escapeHTML(m.isPerKg ? 'kg' : (m.unit || 'unit'))}</td>
                         <td>${formatMoney(m.total)}</td>
                         <td>
+                            <button type="button" class="btn btn-primary" onclick="editJobMaterial(${i})">
+                                Edit
+                            </button>
                             <button type="button" class="btn btn-danger" onclick="removeJobMaterial(${i})">
                                 X
                             </button>
@@ -1204,6 +1265,9 @@
                     <td>${Number(l.hours).toLocaleString()} hrs</td>
                     <td>${formatMoney(l.total)}</td>
                     <td>
+                        <button type="button" class="btn btn-primary" onclick="editJobLabor(${i})">
+                            Edit
+                        </button>
                         <button type="button" class="btn btn-danger" onclick="removeJobLabor(${i})">
                             X
                         </button>
@@ -1224,6 +1288,9 @@
                     <td>${formatMoney(service.unitPrice)}</td>
                     <td>${formatMoney(service.total)}</td>
                     <td>
+                        <button type="button" class="btn btn-primary" onclick="editJobService(${i})">
+                            Edit
+                        </button>
                         <button type="button" class="btn btn-danger" onclick="removeJobService(${i})">
                             X
                         </button>
