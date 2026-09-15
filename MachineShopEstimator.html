@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -42,6 +41,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 15px;
             padding-bottom: 20px;
             margin-bottom: 20px;
             border-bottom: 2px solid var(--border);
@@ -56,6 +56,7 @@
             display: flex;
             gap: 10px;
             margin-bottom: 20px;
+            flex-wrap: wrap;
         }
 
         .tab-btn {
@@ -67,6 +68,11 @@
             font-weight: 600;
             color: var(--text-muted);
             transition: all 0.2s;
+        }
+
+        .tab-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
         }
 
         .tab-btn.active {
@@ -90,7 +96,14 @@
         }
 
         @media (max-width: 768px) {
-            .grid-2 { grid-template-columns: 1fr; }
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
         }
 
         .card {
@@ -123,17 +136,22 @@
             color: var(--text);
         }
 
-        input, select {
+        input,
+        select {
             width: 100%;
             padding: 8px 12px;
             border: 1px solid var(--border);
             border-radius: 6px;
             font-size: 0.95rem;
+            background: white;
+            color: var(--text);
         }
 
-        input:focus, select:focus {
+        input:focus,
+        select:focus {
             outline: none;
             border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
         }
 
         .btn {
@@ -142,13 +160,32 @@
             border-radius: 6px;
             font-weight: 600;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: background 0.2s, opacity 0.2s;
         }
 
-        .btn-primary { background: var(--accent); color: white; }
-        .btn-primary:hover { background: var(--accent-hover); }
-        .btn-danger { background: var(--danger); color: white; }
-        .btn-success { background: var(--success); color: white; }
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+            opacity: 1;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
 
         table {
             width: 100%;
@@ -156,7 +193,8 @@
             margin-top: 10px;
         }
 
-        th, td {
+        th,
+        td {
             text-align: left;
             padding: 10px;
             border-bottom: 1px solid var(--border);
@@ -166,6 +204,10 @@
         th {
             background-color: var(--bg);
             font-weight: 600;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
         }
 
         .summary-box {
@@ -178,6 +220,7 @@
         .summary-row {
             display: flex;
             justify-content: space-between;
+            gap: 15px;
             margin-bottom: 8px;
             font-size: 0.95rem;
         }
@@ -191,14 +234,35 @@
         }
 
         .badge {
+            display: inline-block;
             padding: 4px 8px;
             border-radius: 4px;
             font-size: 0.8rem;
             font-weight: 600;
         }
 
-        .badge-success { background: #dcfce7; color: var(--success); }
-        .badge-danger { background: #fee2e2; color: var(--danger); }
+        .badge-success {
+            background: #dcfce7;
+            color: var(--success);
+        }
+
+        .badge-danger {
+            background: #fee2e2;
+            color: var(--danger);
+        }
+
+        .empty-row {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 18px;
+        }
+
+        .database-actions {
+            margin-top: 10px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
     </style>
 </head>
 <body>
@@ -210,8 +274,8 @@
     </header>
 
     <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('estimator')">Job Cost Estimator</button>
-        <button class="tab-btn" onclick="switchTab('database')">Rates & Materials Database</button>
+        <button type="button" class="tab-btn active" onclick="switchTab('estimator', this)">Job Cost Estimator</button>
+        <button type="button" class="tab-btn" onclick="switchTab('database', this)">Rates & Materials Database</button>
     </div>
 
     <!-- TAB 1: ESTIMATOR -->
@@ -221,78 +285,91 @@
                 <!-- Job Setup -->
                 <div class="card">
                     <div class="card-title">1. Project & Client Info</div>
+
                     <div class="form-group">
-                        <label>Project / Job Title</label>
+                        <label for="jobTitle">Project / Job Title</label>
                         <input type="text" id="jobTitle" placeholder="e.g. Flange Shaft Machining & Keyway">
                     </div>
+
                     <div class="form-group">
-                        <label>Client Name</label>
+                        <label for="clientName">Client Name</label>
                         <input type="text" id="clientName" placeholder="e.g. ABC Manufacturing">
                     </div>
+
                     <div class="form-group">
-                        <label>Contract Price Offered / Target (₱)</label>
-                        <input type="number" id="contractPrice" value="0" oninput="calculateJob()">
+                        <label for="contractPrice">Contract Price Offered / Target (₱)</label>
+                        <input type="number" id="contractPrice" value="0" min="0" step="0.01" oninput="calculateJob()">
                     </div>
                 </div>
 
                 <!-- Materials Section -->
                 <div class="card">
                     <div class="card-title">2. Material Requirements</div>
+
                     <div class="form-group">
-                        <label>Select Material</label>
+                        <label for="materialSelect">Select Material</label>
                         <select id="materialSelect"></select>
                     </div>
+
                     <div style="display:flex; gap:10px;">
                         <div class="form-group" style="flex:1;">
-                            <label>Quantity / Units Needed</label>
+                            <label for="materialQty">Quantity / Units Needed</label>
                             <input type="number" id="materialQty" value="1" min="0.1" step="any">
                         </div>
+
                         <div class="form-group" style="align-self:flex-end;">
-                            <button class="btn btn-primary" onclick="addMaterialToJob()">Add Material</button>
+                            <button type="button" class="btn btn-primary" onclick="addMaterialToJob()">Add Material</button>
                         </div>
                     </div>
 
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Material</th>
-                                <th>Qty</th>
-                                <th>Cost (₱)</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="jobMaterialsTable"></tbody>
-                    </table>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Material</th>
+                                    <th>Qty</th>
+                                    <th>Cost (₱)</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="jobMaterialsTable"></tbody>
+                        </table>
+                    </div>
                 </div>
 
                 <!-- Labor & Machining Section -->
                 <div class="card">
                     <div class="card-title">3. Machining & Labor Hours</div>
+
                     <div class="form-group">
-                        <label>Select Operation / Machine</label>
+                        <label for="laborSelect">Select Operation / Machine</label>
                         <select id="laborSelect"></select>
                     </div>
+
                     <div style="display:flex; gap:10px;">
                         <div class="form-group" style="flex:1;">
-                            <label>Estimated Hours</label>
+                            <label for="laborHours">Estimated Hours</label>
                             <input type="number" id="laborHours" value="1" min="0.1" step="any">
                         </div>
+
                         <div class="form-group" style="align-self:flex-end;">
-                            <button class="btn btn-primary" onclick="addLaborToJob()">Add Operation</button>
+                            <button type="button" class="btn btn-primary" onclick="addLaborToJob()">Add Operation</button>
                         </div>
                     </div>
 
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Operation</th>
-                                <th>Hours</th>
-                                <th>Cost (₱)</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="jobLaborTable"></tbody>
-                    </table>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Operation</th>
+                                    <th>Hours</th>
+                                    <th>Cost (₱)</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="jobLaborTable"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
@@ -300,15 +377,15 @@
             <div>
                 <div class="card">
                     <div class="card-title">4. Cost Breakdown & Profitability</div>
-                    
+
                     <div class="form-group">
-                        <label>Overhead / Setup Fee (₱)</label>
-                        <input type="number" id="overheadCost" value="500" oninput="calculateJob()">
+                        <label for="overheadCost">Overhead / Setup Fee (₱)</label>
+                        <input type="number" id="overheadCost" value="500" min="0" step="0.01" oninput="calculateJob()">
                     </div>
 
                     <div class="form-group">
-                        <label>Target Profit Margin (%)</label>
-                        <input type="number" id="targetMargin" value="25" oninput="calculateJob()">
+                        <label for="targetMargin">Target Profit Margin (%)</label>
+                        <input type="number" id="targetMargin" value="25" min="0" step="0.1" oninput="calculateJob()">
                     </div>
 
                     <div class="summary-box">
@@ -316,38 +393,49 @@
                             <span>Total Material Cost:</span>
                             <span id="sumMaterial">₱0.00</span>
                         </div>
+
                         <div class="summary-row">
                             <span>Total Machining Labor:</span>
                             <span id="sumLabor">₱0.00</span>
                         </div>
+
                         <div class="summary-row">
                             <span>Overhead / Setup:</span>
                             <span id="sumOverhead">₱0.00</span>
                         </div>
+
                         <div class="summary-row total">
                             <span>Direct Shop Cost:</span>
                             <span id="sumDirectCost">₱0.00</span>
                         </div>
+
                         <div class="summary-row" style="margin-top:10px;">
                             <span>Suggested Quote Price (+Margin):</span>
                             <span id="sumSuggestedPrice" style="font-weight:700; color:var(--accent);">₱0.00</span>
                         </div>
+
                         <div class="summary-row">
                             <span>Entered Contract Price:</span>
                             <span id="sumContractPrice">₱0.00</span>
                         </div>
+
                         <div class="summary-row total">
                             <span>Projected Profit / Loss:</span>
                             <span id="sumProfit">₱0.00</span>
                         </div>
+
                         <div class="summary-row">
                             <span>Net Profit Margin:</span>
-                            <span id="sumMarginBadge"><span class="badge badge-success">0%</span></span>
+                            <span id="sumMarginBadge">
+                                <span class="badge badge-success">0.0%</span>
+                            </span>
                         </div>
                     </div>
 
                     <div style="margin-top:15px; display:flex; gap:10px;">
-                        <button class="btn btn-success" style="flex:1;" onclick="exportSummaryCSV()">Export Job Quote CSV</button>
+                        <button type="button" class="btn btn-success" style="flex:1;" onclick="exportSummaryCSV()">
+                            Export Job Quote CSV
+                        </button>
                     </div>
                 </div>
             </div>
@@ -360,56 +448,67 @@
             <!-- Material Rates -->
             <div class="card">
                 <div class="card-title">Material Rates Vault (₱)</div>
+
                 <div class="form-group">
-                    <label>Material Name & Spec</label>
+                    <label for="newMatName">Material Name & Spec</label>
                     <input type="text" id="newMatName" placeholder="e.g. Mild Steel Plate 12mm">
                 </div>
+
                 <div class="form-group">
-                    <label>Unit (e.g. kg, pc, meter, length)</label>
+                    <label for="newMatUnit">Unit (e.g. kg, pc, meter, length)</label>
                     <input type="text" id="newMatUnit" placeholder="e.g. pc">
                 </div>
-                <div class="form-group">
-                    <label>Unit Price (₱)</label>
-                    <input type="number" id="newMatPrice" placeholder="0.00">
-                </div>
-                <button class="btn btn-primary" onclick="addMaterialRate()">Save Material Rate</button>
 
-                <table style="margin-top:20px;">
-                    <thead>
-                        <tr>
-                            <th>Item Name</th>
-                            <th>Unit</th>
-                            <th>Price (₱)</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="dbMaterialsTable"></tbody>
-                </table>
+                <div class="form-group">
+                    <label for="newMatPrice">Unit Price (₱)</label>
+                    <input type="number" id="newMatPrice" placeholder="0.00" min="0" step="0.01">
+                </div>
+
+                <button type="button" class="btn btn-primary" onclick="addMaterialRate()">Save Material Rate</button>
+
+                <div class="table-wrap">
+                    <table style="margin-top:20px;">
+                        <thead>
+                            <tr>
+                                <th>Item Name</th>
+                                <th>Unit</th>
+                                <th>Price (₱)</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dbMaterialsTable"></tbody>
+                    </table>
+                </div>
             </div>
 
             <!-- Labor Rates -->
             <div class="card">
                 <div class="card-title">Machine Hourly Rates (₱/hr)</div>
+
                 <div class="form-group">
-                    <label>Machine / Operation Name</label>
+                    <label for="newLaborName">Machine / Operation Name</label>
                     <input type="text" id="newLaborName" placeholder="e.g. Lathe Turning Work">
                 </div>
-                <div class="form-group">
-                    <label>Hourly Rate (₱/hr)</label>
-                    <input type="number" id="newLaborRate" placeholder="0.00">
-                </div>
-                <button class="btn btn-primary" onclick="addLaborRate()">Save Hourly Rate</button>
 
-                <table style="margin-top:20px;">
-                    <thead>
-                        <tr>
-                            <th>Machine / Process</th>
-                            <th>Rate (₱/hr)</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="dbLaborTable"></tbody>
-                </table>
+                <div class="form-group">
+                    <label for="newLaborRate">Hourly Rate (₱/hr)</label>
+                    <input type="number" id="newLaborRate" placeholder="0.00" min="0" step="0.01">
+                </div>
+
+                <button type="button" class="btn btn-primary" onclick="addLaborRate()">Save Hourly Rate</button>
+
+                <div class="table-wrap">
+                    <table style="margin-top:20px;">
+                        <thead>
+                            <tr>
+                                <th>Machine / Process</th>
+                                <th>Rate (₱/hr)</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dbLaborTable"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -417,24 +516,36 @@
 
 <script>
     // Initial Stock Data (In PHP)
-    let defaultMaterials = [
-        { id: 1, name: "Mild Steel Plate (1/2\" x 4' x 8')", unit: "sheet", price: 8500 },
-        { id: 2, name: "304 Stainless Round Bar (1\" dia x 20ft)", unit: "length", price: 3200 },
-        { id: 3, name: "Angle Bar 2\" x 2\" x 1/4\" (20ft)", unit: "length", price: 1450 },
-        { id: 4, name: "Tubular Steel 2\" x 2\" x 1.5mm", unit: "length", price: 950 }
+    const defaultMaterials = [
+        { id: 1, name: 'Mild Steel Plate (1/2" x 4\' x 8\')', unit: 'sheet', price: 8500 },
+        { id: 2, name: '304 Stainless Round Bar (1" dia x 20ft)', unit: 'length', price: 3200 },
+        { id: 3, name: 'Angle Bar 2" x 2" x 1/4" (20ft)', unit: 'length', price: 1450 },
+        { id: 4, name: 'Tubular Steel 2" x 2" x 1.5mm', unit: 'length', price: 950 }
     ];
 
-    let defaultLabor = [
-        { id: 1, name: "Lathe Machine Turning", rate: 450 },
-        { id: 2, name: "Milling Machine Work", rate: 550 },
-        { id: 3, name: "Horizontal Boring", rate: 750 },
-        { id: 4, name: "SMAW/MIG Welding & Fab", rate: 350 },
-        { id: 5, name: "Bench Work & Surface Grinding", rate: 400 }
+    const defaultLabor = [
+        { id: 1, name: 'Lathe Machine Turning', rate: 450 },
+        { id: 2, name: 'Milling Machine Work', rate: 550 },
+        { id: 3, name: 'Horizontal Boring', rate: 750 },
+        { id: 4, name: 'SMAW/MIG Welding & Fab', rate: 350 },
+        { id: 5, name: 'Bench Work & Surface Grinding', rate: 400 }
     ];
+
+    function loadStoredData(key, fallback) {
+        try {
+            const stored = localStorage.getItem(key);
+            if (!stored) return fallback.map(item => ({ ...item }));
+            const parsed = JSON.parse(stored);
+            return Array.isArray(parsed) ? parsed : fallback.map(item => ({ ...item }));
+        } catch (error) {
+            console.warn('Could not load saved data:', error);
+            return fallback.map(item => ({ ...item }));
+        }
+    }
 
     // Local Storage or Defaults
-    let materials = JSON.parse(localStorage.getItem('ms_materials')) || defaultMaterials;
-    let laborRates = JSON.parse(localStorage.getItem('ms_labor')) || defaultLabor;
+    let materials = loadStoredData('ms_materials', defaultMaterials);
+    let laborRates = loadStoredData('ms_labor', defaultLabor);
 
     let currentJobMaterials = [];
     let currentJobLabor = [];
@@ -446,69 +557,138 @@
         renderDatabaseTables();
     }
 
-    function switchTab(tabId) {
+    function switchTab(tabId, button) {
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
         document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-        
-        event.target.classList.add('active');
+
+        if (button) {
+            button.classList.add('active');
+        }
+
         document.getElementById(tabId).classList.add('active');
+    }
+
+    function formatMoney(value) {
+        return '₱' + Number(value || 0).toLocaleString(undefined, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
     }
 
     function renderDropdowns() {
         const matSel = document.getElementById('materialSelect');
-        matSel.innerHTML = materials.map(m => <option value="${m.id}">${m.name} - ₱${m.price.toLocaleString()} / ${m.unit}</option>).join('');
+
+        if (materials.length === 0) {
+            matSel.innerHTML = '<option value="">No materials available</option>';
+        } else {
+            matSel.innerHTML = materials.map(m => `
+                <option value="${m.id}">
+                    ${escapeHTML(m.name)} - ₱${Number(m.price).toLocaleString()} / ${escapeHTML(m.unit)}
+                </option>
+            `).join('');
+        }
 
         const labSel = document.getElementById('laborSelect');
-        labSel.innerHTML = laborRates.map(l => <option value="${l.id}">${l.name} - ₱${l.rate.toLocaleString()} / hr</option>).join('');
+
+        if (laborRates.length === 0) {
+            labSel.innerHTML = '<option value="">No labor rates available</option>';
+        } else {
+            labSel.innerHTML = laborRates.map(l => `
+                <option value="${l.id}">
+                    ${escapeHTML(l.name)} - ₱${Number(l.rate).toLocaleString()} / hr
+                </option>
+            `).join('');
+        }
     }
 
     function renderDatabaseTables() {
         const matTbody = document.getElementById('dbMaterialsTable');
-        matTbody.innerHTML = materials.map(m => `
-            <tr>
-                <td>${m.name}</td>
-                <td>${m.unit}</td>
-                <td>₱${m.price.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-                <td><button class="btn btn-danger" onclick="deleteMaterialRate(${m.id})">Delete</button></td>
-            </tr>
-        `).join('');
+
+        if (materials.length === 0) {
+            matTbody.innerHTML = '<tr><td colspan="4" class="empty-row">No material rates saved.</td></tr>';
+        } else {
+            matTbody.innerHTML = materials.map(m => `
+                <tr>
+                    <td>${escapeHTML(m.name)}</td>
+                    <td>${escapeHTML(m.unit)}</td>
+                    <td>${formatMoney(m.price)}</td>
+                    <td>
+                        <button type="button" class="btn btn-danger" onclick="deleteMaterialRate(${m.id})">
+                            Delete
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
 
         const labTbody = document.getElementById('dbLaborTable');
-        labTbody.innerHTML = laborRates.map(l => `
-            <tr>
-                <td>${l.name}</td>
-                <td>₱${l.rate.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-                <td><button class="btn btn-danger" onclick="deleteLaborRate(${l.id})">Delete</button></td>
-            </tr>
-        `).join('');
+
+        if (laborRates.length === 0) {
+            labTbody.innerHTML = '<tr><td colspan="3" class="empty-row">No labor rates saved.</td></tr>';
+        } else {
+            labTbody.innerHTML = laborRates.map(l => `
+                <tr>
+                    <td>${escapeHTML(l.name)}</td>
+                    <td>${formatMoney(l.rate)}</td>
+                    <td>
+                        <button type="button" class="btn btn-danger" onclick="deleteLaborRate(${l.id})">
+                            Delete
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
     }
 
     function addMaterialRate() {
-        const name = document.getElementById('newMatName').value;
-        const unit = document.getElementById('newMatUnit').value || 'unit';
+        const name = document.getElementById('newMatName').value.trim();
+        const unit = document.getElementById('newMatUnit').value.trim() || 'unit';
         const price = parseFloat(document.getElementById('newMatPrice').value);
 
-        if(!name || isNaN(price)) return alert('Please enter valid material details.');
+        if (!name || isNaN(price) || price < 0) {
+            return alert('Please enter valid material details.');
+        }
 
-        materials.push({ id: Date.now(), name, unit, price });
+        materials.push({
+            id: Date.now(),
+            name,
+            unit,
+            price
+        });
+
         saveData();
+
         document.getElementById('newMatName').value = '';
+        document.getElementById('newMatUnit').value = '';
         document.getElementById('newMatPrice').value = '';
     }
 
     function deleteMaterialRate(id) {
         materials = materials.filter(m => m.id !== id);
         saveData();
+
+        // Remove any currently-added job material that uses the deleted database item.
+        currentJobMaterials = currentJobMaterials.filter(m => m.id !== id);
+        renderJobTables();
+        calculateJob();
     }
 
     function addLaborRate() {
-        const name = document.getElementById('newLaborName').value;
+        const name = document.getElementById('newLaborName').value.trim();
         const rate = parseFloat(document.getElementById('newLaborRate').value);
 
-        if(!name || isNaN(rate)) return alert('Please enter valid labor details.');
+        if (!name || isNaN(rate) || rate < 0) {
+            return alert('Please enter valid labor details.');
+        }
 
-        laborRates.push({ id: Date.now(), name, rate });
+        laborRates.push({
+            id: Date.now(),
+            name,
+            rate
+        });
+
         saveData();
+
         document.getElementById('newLaborName').value = '';
         document.getElementById('newLaborRate').value = '';
     }
@@ -516,17 +696,29 @@
     function deleteLaborRate(id) {
         laborRates = laborRates.filter(l => l.id !== id);
         saveData();
+
+        // Remove any currently-added job labor item that uses the deleted database item.
+        currentJobLabor = currentJobLabor.filter(l => l.id !== id);
+        renderJobTables();
+        calculateJob();
     }
 
     // Job Calculator logic
     function addMaterialToJob() {
-        const id = parseInt(document.getElementById('materialSelect').value);
+        const id = parseInt(document.getElementById('materialSelect').value, 10);
         const qty = parseFloat(document.getElementById('materialQty').value);
         const item = materials.find(m => m.id === id);
 
-        if(!item || isNaN(qty) || qty <= 0) return;
+        if (!item || isNaN(qty) || qty <= 0) {
+            return alert('Please select a material and enter a valid quantity.');
+        }
 
-        currentJobMaterials.push({ ...item, qty, total: item.price * qty });
+        currentJobMaterials.push({
+            ...item,
+            qty,
+            total: item.price * qty
+        });
+
         renderJobTables();
         calculateJob();
     }
@@ -538,13 +730,20 @@
     }
 
     function addLaborToJob() {
-        const id = parseInt(document.getElementById('laborSelect').value);
+        const id = parseInt(document.getElementById('laborSelect').value, 10);
         const hours = parseFloat(document.getElementById('laborHours').value);
         const item = laborRates.find(l => l.id === id);
 
-        if(!item || isNaN(hours) || hours <= 0) return;
+        if (!item || isNaN(hours) || hours <= 0) {
+            return alert('Please select an operation and enter valid hours.');
+        }
 
-        currentJobLabor.push({ ...item, hours, total: item.rate * hours });
+        currentJobLabor.push({
+            ...item,
+            hours,
+            total: item.rate * hours
+        });
+
         renderJobTables();
         calculateJob();
     }
@@ -556,92 +755,189 @@
     }
 
     function renderJobTables() {
-        document.getElementById('jobMaterialsTable').innerHTML = currentJobMaterials.map((m, i) => `
-            <tr>
-                <td>${m.name}</td>
-                <td>${m.qty} ${m.unit}</td>
-                <td>₱${m.total.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-                <td><button class="btn btn-danger" onclick="removeJobMaterial(${i})">X</button></td>
-            </tr>
-        `).join('');
+        const materialTbody = document.getElementById('jobMaterialsTable');
 
-        document.getElementById('jobLaborTable').innerHTML = currentJobLabor.map((l, i) => `
-            <tr>
-                <td>${l.name}</td>
-                <td>${l.hours} hrs</td>
-                <td>₱${l.total.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-                <td><button class="btn btn-danger" onclick="removeJobLabor(${i})">X</button></td>
-            </tr>
-        `).join('');
+        if (currentJobMaterials.length === 0) {
+            materialTbody.innerHTML = '<tr><td colspan="4" class="empty-row">No materials added yet.</td></tr>';
+        } else {
+            materialTbody.innerHTML = currentJobMaterials.map((m, i) => `
+                <tr>
+                    <td>${escapeHTML(m.name)}</td>
+                    <td>${Number(m.qty).toLocaleString()} ${escapeHTML(m.unit)}</td>
+                    <td>${formatMoney(m.total)}</td>
+                    <td>
+                        <button type="button" class="btn btn-danger" onclick="removeJobMaterial(${i})">
+                            X
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        const laborTbody = document.getElementById('jobLaborTable');
+
+        if (currentJobLabor.length === 0) {
+            laborTbody.innerHTML = '<tr><td colspan="4" class="empty-row">No operations added yet.</td></tr>';
+        } else {
+            laborTbody.innerHTML = currentJobLabor.map((l, i) => `
+                <tr>
+                    <td>${escapeHTML(l.name)}</td>
+                    <td>${Number(l.hours).toLocaleString()} hrs</td>
+                    <td>${formatMoney(l.total)}</td>
+                    <td>
+                        <button type="button" class="btn btn-danger" onclick="removeJobLabor(${i})">
+                            X
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
     }
 
     function calculateJob() {
-        const matTotal = currentJobMaterials.reduce((acc, curr) => acc + curr.total, 0);
-        const laborTotal = currentJobLabor.reduce((acc, curr) => acc + curr.total, 0);
+        const matTotal = currentJobMaterials.reduce((acc, curr) => acc + Number(curr.total || 0), 0);
+        const laborTotal = currentJobLabor.reduce((acc, curr) => acc + Number(curr.total || 0), 0);
+
         const overhead = parseFloat(document.getElementById('overheadCost').value) || 0;
         const targetMarginPct = parseFloat(document.getElementById('targetMargin').value) || 0;
         const contractPrice = parseFloat(document.getElementById('contractPrice').value) || 0;
 
         const directCost = matTotal + laborTotal + overhead;
-        const suggestedPrice = directCost * (1 + (targetMarginPct / 100));
-        const profit = contractPrice - directCost;
-        const netMarginPct = contractPrice > 0 ? (profit / contractPrice) * 100 : 0;
 
-        document.getElementById('sumMaterial').innerText = '₱' + matTotal.toLocaleString(undefined, {minimumFractionDigits:2});
-        document.getElementById('sumLabor').innerText = '₱' + laborTotal.toLocaleString(undefined, {minimumFractionDigits:2});
-        document.getElementById('sumOverhead').innerText = '₱' + overhead.toLocaleString(undefined, {minimumFractionDigits:2});
-        document.getElementById('sumDirectCost').innerText = '₱' + directCost.toLocaleString(undefined, {minimumFractionDigits:2});
-        document.getElementById('sumSuggestedPrice').innerText = '₱' + suggestedPrice.toLocaleString(undefined, {minimumFractionDigits:2});
-        document.getElementById('sumContractPrice').innerText = '₱' + contractPrice.toLocaleString(undefined, {minimumFractionDigits:2});
-        
+        // This follows the original calculator's markup logic:
+        // direct cost + target percentage of direct cost.
+        const suggestedPrice = directCost * (1 + (targetMarginPct / 100));
+
+        const profit = contractPrice - directCost;
+        const netMarginPct = contractPrice > 0
+            ? (profit / contractPrice) * 100
+            : 0;
+
+        document.getElementById('sumMaterial').innerText = formatMoney(matTotal);
+        document.getElementById('sumLabor').innerText = formatMoney(laborTotal);
+        document.getElementById('sumOverhead').innerText = formatMoney(overhead);
+        document.getElementById('sumDirectCost').innerText = formatMoney(directCost);
+        document.getElementById('sumSuggestedPrice').innerText = formatMoney(suggestedPrice);
+        document.getElementById('sumContractPrice').innerText = formatMoney(contractPrice);
+
         const profitEl = document.getElementById('sumProfit');
-        profitEl.innerText = '₱' + profit.toLocaleString(undefined, {minimumFractionDigits:2});
+        profitEl.innerText = formatMoney(profit);
         profitEl.style.color = profit >= 0 ? 'var(--success)' : 'var(--danger)';
 
         const badgeEl = document.getElementById('sumMarginBadge');
         const badgeClass = netMarginPct >= 0 ? 'badge-success' : 'badge-danger';
-        badgeEl.innerHTML = <span class="badge ${badgeClass}">${netMarginPct.toFixed(1)}%</span>;
+
+        badgeEl.innerHTML = `
+            <span class="badge ${badgeClass}">
+                ${netMarginPct.toFixed(1)}%
+            </span>
+        `;
+    }
+
+    function csvEscape(value) {
+        const text = String(value ?? '');
+        return '"' + text.replace(/"/g, '""') + '"';
     }
 
     function exportSummaryCSV() {
-        const jobTitle = document.getElementById('jobTitle').value || "Machine Shop Estimation";
-        const client = document.getElementById('clientName').value || "N/A";
-        
-        let csvContent = "data:text/csv;charset=utf-8,";
-        csvContent += Machine Shop Project Estimation Quote\n;
-        csvContent += Project Title,${jobTitle}\n;
-        csvContent += Client Name,${client}\n\n;
-        
-        csvContent += MATERIALS\nItem,Qty,Unit Cost (PHP),Total Cost (PHP)\n;
+        const jobTitle = document.getElementById('jobTitle').value.trim() || 'Machine Shop Estimation';
+        const client = document.getElementById('clientName').value.trim() || 'N/A';
+
+        const matTotal = currentJobMaterials.reduce((acc, curr) => acc + Number(curr.total || 0), 0);
+        const laborTotal = currentJobLabor.reduce((acc, curr) => acc + Number(curr.total || 0), 0);
+        const overhead = parseFloat(document.getElementById('overheadCost').value) || 0;
+        const targetMarginPct = parseFloat(document.getElementById('targetMargin').value) || 0;
+        const contractPrice = parseFloat(document.getElementById('contractPrice').value) || 0;
+
+        const directCost = matTotal + laborTotal + overhead;
+        const suggestedPrice = directCost * (1 + targetMarginPct / 100);
+        const profit = contractPrice - directCost;
+        const netMarginPct = contractPrice > 0 ? (profit / contractPrice) * 100 : 0;
+
+        let rows = [];
+
+        rows.push(['Machine Shop Project Estimation Quote']);
+        rows.push(['Project Title', jobTitle]);
+        rows.push(['Client Name', client]);
+        rows.push([]);
+
+        rows.push(['MATERIALS']);
+        rows.push(['Item', 'Qty', 'Unit', 'Unit Cost (PHP)', 'Total Cost (PHP)']);
+
         currentJobMaterials.forEach(m => {
-            csvContent += "${m.name}",${m.qty},${m.price},${m.total}\n;
+            rows.push([
+                m.name,
+                m.qty,
+                m.unit,
+                Number(m.price).toFixed(2),
+                Number(m.total).toFixed(2)
+            ]);
         });
-        
-        csvContent += \nMACHINING & LABOR\nOperation,Hours,Hourly Rate (PHP),Total Cost (PHP)\n;
+
+        rows.push([]);
+        rows.push(['MACHINING & LABOR']);
+        rows.push(['Operation', 'Hours', 'Hourly Rate (PHP)', 'Total Cost (PHP)']);
+
         currentJobLabor.forEach(l => {
-            csvContent += "${l.name}",${l.hours},${l.rate},${l.total}\n;
+            rows.push([
+                l.name,
+                l.hours,
+                Number(l.rate).toFixed(2),
+                Number(l.total).toFixed(2)
+            ]);
         });
 
-        csvContent += \nCOST SUMMARY\n;
-        csvContent += Total Materials,${document.getElementById('sumMaterial').innerText.replace(/[^0-9.]/g, '')}\n;
-        csvContent += Total Labor,${document.getElementById('sumLabor').innerText.replace(/[^0-9.]/g, '')}\n;
-        csvContent += Overhead/Setup,${document.getElementById('sumOverhead').innerText.replace(/[^0-9.]/g, '')}\n;
-        csvContent += Direct Cost,${document.getElementById('sumDirectCost').innerText.replace(/[^0-9.]/g, '')}\n;
-        csvContent += Contract Price,${document.getElementById('sumContractPrice').innerText.replace(/[^0-9.]/g, '')}\n;
-        csvContent += Projected Profit,${document.getElementById('sumProfit').innerText.replace(/[^0-9.]/g, '')}\n;
+        rows.push([]);
+        rows.push(['COST SUMMARY']);
+        rows.push(['Total Materials', matTotal.toFixed(2)]);
+        rows.push(['Total Labor', laborTotal.toFixed(2)]);
+        rows.push(['Overhead / Setup', overhead.toFixed(2)]);
+        rows.push(['Direct Cost', directCost.toFixed(2)]);
+        rows.push(['Target Profit Margin (%)', targetMarginPct.toFixed(1)]);
+        rows.push(['Suggested Quote Price', suggestedPrice.toFixed(2)]);
+        rows.push(['Contract Price', contractPrice.toFixed(2)]);
+        rows.push(['Projected Profit / Loss', profit.toFixed(2)]);
+        rows.push(['Net Profit Margin (%)', netMarginPct.toFixed(1)]);
 
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", ${jobTitle.replace(/[^a-z0-9]/gi, '_')}_Quote.csv);
+        const csvContent = rows
+            .map(row => row.map(csvEscape).join(','))
+            .join('\r\n');
+
+        const blob = new Blob([csvContent], {
+            type: 'text/csv;charset=utf-8;'
+        });
+
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+
+        const safeFileName = jobTitle
+            .replace(/[^a-z0-9]/gi, '_')
+            .replace(/_+/g, '_')
+            .replace(/^_+|_+$/g, '') || 'Machine_Shop_Estimation';
+
+        link.href = url;
+        link.download = safeFileName + '_Quote.csv';
+
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+
+        URL.revokeObjectURL(url);
+    }
+
+    function escapeHTML(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
     }
 
     // Initialize
     renderDropdowns();
     renderDatabaseTables();
+    renderJobTables();
     calculateJob();
 </script>
 
