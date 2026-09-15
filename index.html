@@ -267,6 +267,8 @@
 </head>
 <body>
 
+<div id="appError" style="display:none; margin-bottom:16px; padding:12px 16px; border:1px solid #fca5a5; background:#fef2f2; color:#991b1b; border-radius:8px; font-weight:600;">The estimator could not initialize. Please refresh the page or check the browser console.</div>
+
 <div class="container">
     <header>
         <h1>🛠️ Machine Shop Project Estimator & Price Vault</h1>
@@ -306,20 +308,45 @@
                 <div class="card">
                     <div class="card-title">2. Material Requirements</div>
 
-                    <div class="form-group">
-                        <label for="materialSelect">Select Material</label>
-                        <select id="materialSelect"></select>
-                    </div>
-
                     <div style="display:flex; gap:10px;">
                         <div class="form-group" style="flex:1;">
                             <label for="materialQty">Quantity / Units Needed</label>
                             <input type="number" id="materialQty" value="1" min="0.1" step="any">
                         </div>
+                    </div>
 
-                        <div class="form-group" style="align-self:flex-end;">
-                            <button type="button" class="btn btn-primary" onclick="addMaterialToJob()">Add Material</button>
+                    <div style="border-top:1px solid var(--border); margin:20px 0 15px; padding-top:15px;">
+                        <div class="form-group">
+                            <label for="customMatName">Custom Material Name</label>
+                            <input type="text" id="customMatName" placeholder="e.g. Brass Rod">
                         </div>
+
+                        <div class="form-group">
+                            <label for="customMatSize">Custom Size / Spec</label>
+                            <input type="text" id="customMatSize" placeholder="e.g. 20mm dia x 1m">
+                        </div>
+
+                        <div style="display:flex; gap:10px;">
+                            <div class="form-group" style="flex:1;">
+                                <label for="customMatUnit">Unit</label>
+                                <input type="text" id="customMatUnit" placeholder="e.g. pc, kg, meter">
+                            </div>
+
+                            <div class="form-group" style="flex:1;">
+                                <label for="customMatPrice">Cost per Unit (₱)</label>
+                                <input type="number" id="customMatPrice" value="0" min="0" step="0.01">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="customMatPerKg">Material Price Type</label>
+                            <select id="customMatPerKg">
+                                <option value="false">Per Unit / Piece / Length</option>
+                                <option value="true">Per KG</option>
+                            </select>
+                        </div>
+
+                        <button type="button" class="btn btn-primary" onclick="addCustomMaterialToJob()">Add Custom Material</button>
                     </div>
 
                     <div class="table-wrap">
@@ -450,8 +477,13 @@
                 <div class="card-title">Material Rates Vault (₱)</div>
 
                 <div class="form-group">
-                    <label for="newMatName">Material Name & Spec</label>
-                    <input type="text" id="newMatName" placeholder="e.g. Mild Steel Plate 12mm">
+                    <label for="newMatName">Material Name</label>
+                    <input type="text" id="newMatName" placeholder="e.g. Mild Steel Plate">
+                </div>
+
+                <div class="form-group">
+                    <label for="newMatSize">Size / Spec</label>
+                    <input type="text" id="newMatSize" placeholder="e.g. 12mm, 1/2 x 4 x 8, 1 inch dia">
                 </div>
 
                 <div class="form-group">
@@ -471,6 +503,7 @@
                         <thead>
                             <tr>
                                 <th>Item Name</th>
+                                <th>Size / Spec</th>
                                 <th>Unit</th>
                                 <th>Price (₱)</th>
                                 <th>Action</th>
@@ -515,12 +548,11 @@
 </div>
 
 <script>
-    // Initial Stock Data (In PHP)
     const defaultMaterials = [
-        { id: 1, name: 'Mild Steel Plate (1/2" x 4\' x 8\')', unit: 'sheet', price: 8500 },
-        { id: 2, name: '304 Stainless Round Bar (1" dia x 20ft)', unit: 'length', price: 3200 },
-        { id: 3, name: 'Angle Bar 2" x 2" x 1/4" (20ft)', unit: 'length', price: 1450 },
-        { id: 4, name: 'Tubular Steel 2" x 2" x 1.5mm', unit: 'length', price: 950 }
+        { id: 1, name: 'Mild Steel Plate', size: '1/2" x 4\' x 8\'', unit: 'sheet', price: 8500 },
+        { id: 2, name: '304 Stainless Round Bar', size: '1" dia x 20ft', unit: 'length', price: 3200 },
+        { id: 3, name: 'Angle Bar', size: '2" x 2" x 1/4" (20ft)', unit: 'length', price: 1450 },
+        { id: 4, name: 'Tubular Steel', size: '2" x 2" x 1.5mm', unit: 'length', price: 950 }
     ];
 
     const defaultLabor = [
@@ -543,10 +575,8 @@
         }
     }
 
-    // Local Storage or Defaults
     let materials = loadStoredData('ms_materials', defaultMaterials);
     let laborRates = loadStoredData('ms_labor', defaultLabor);
-
     let currentJobMaterials = [];
     let currentJobLabor = [];
 
@@ -575,24 +605,32 @@
         });
     }
 
+    function getMaterialLabel(material) {
+        const sizePart = material.size && String(material.size).trim() ? ` - ${material.size}` : '';
+        return `${material.name}${sizePart} - ₱${Number(material.price).toLocaleString()} / ${material.unit}`;
+    }
+
     function renderDropdowns() {
         const matSel = document.getElementById('materialSelect');
-
-        if (materials.length === 0) {
-            matSel.innerHTML = '<option value="">No materials available</option>';
-        } else {
-            matSel.innerHTML = materials.map(m => `
-                <option value="${m.id}">
-                    ${escapeHTML(m.name)} - ₱${Number(m.price).toLocaleString()} / ${escapeHTML(m.unit)}
-                </option>
-            `).join('');
+        if (matSel) {
+            if (materials.length === 0) {
+                matSel.innerHTML = '<option value="">No materials available</option>';
+            } else {
+                matSel.innerHTML = materials.map(m => `
+                    <option value="${m.id}">
+                        ${escapeHTML(getMaterialLabel(m))}
+                    </option>
+                `).join('');
+            }
         }
 
         const labSel = document.getElementById('laborSelect');
 
         if (laborRates.length === 0) {
-            labSel.innerHTML = '<option value="">No labor rates available</option>';
-        } else {
+            if (labSel) {
+                labSel.innerHTML = '<option value="">No labor rates available</option>';
+            }
+        } else if (labSel) {
             labSel.innerHTML = laborRates.map(l => `
                 <option value="${l.id}">
                     ${escapeHTML(l.name)} - ₱${Number(l.rate).toLocaleString()} / hr
@@ -605,11 +643,12 @@
         const matTbody = document.getElementById('dbMaterialsTable');
 
         if (materials.length === 0) {
-            matTbody.innerHTML = '<tr><td colspan="4" class="empty-row">No material rates saved.</td></tr>';
+            matTbody.innerHTML = '<tr><td colspan="5" class="empty-row">No material rates saved.</td></tr>';
         } else {
             matTbody.innerHTML = materials.map(m => `
                 <tr>
                     <td>${escapeHTML(m.name)}</td>
+                    <td>${escapeHTML(m.size || '—')}</td>
                     <td>${escapeHTML(m.unit)}</td>
                     <td>${formatMoney(m.price)}</td>
                     <td>
@@ -642,16 +681,18 @@
 
     function addMaterialRate() {
         const name = document.getElementById('newMatName').value.trim();
+        const size = document.getElementById('newMatSize').value.trim();
         const unit = document.getElementById('newMatUnit').value.trim() || 'unit';
         const price = parseFloat(document.getElementById('newMatPrice').value);
 
         if (!name || isNaN(price) || price < 0) {
-            return alert('Please enter valid material details.');
+            return alert('Please enter a material name and a valid unit price.');
         }
 
         materials.push({
             id: Date.now(),
             name,
+            size,
             unit,
             price
         });
@@ -659,6 +700,7 @@
         saveData();
 
         document.getElementById('newMatName').value = '';
+        document.getElementById('newMatSize').value = '';
         document.getElementById('newMatUnit').value = '';
         document.getElementById('newMatPrice').value = '';
     }
@@ -666,8 +708,6 @@
     function deleteMaterialRate(id) {
         materials = materials.filter(m => m.id !== id);
         saveData();
-
-        // Remove any currently-added job material that uses the deleted database item.
         currentJobMaterials = currentJobMaterials.filter(m => m.id !== id);
         renderJobTables();
         calculateJob();
@@ -696,14 +736,11 @@
     function deleteLaborRate(id) {
         laborRates = laborRates.filter(l => l.id !== id);
         saveData();
-
-        // Remove any currently-added job labor item that uses the deleted database item.
         currentJobLabor = currentJobLabor.filter(l => l.id !== id);
         renderJobTables();
         calculateJob();
     }
 
-    // Job Calculator logic
     function addMaterialToJob() {
         const id = parseInt(document.getElementById('materialSelect').value, 10);
         const qty = parseFloat(document.getElementById('materialQty').value);
@@ -718,6 +755,41 @@
             qty,
             total: item.price * qty
         });
+
+        renderJobTables();
+        calculateJob();
+    }
+
+    function addCustomMaterialToJob() {
+        const name = document.getElementById('customMatName').value.trim();
+        const size = document.getElementById('customMatSize').value.trim();
+        const unit = document.getElementById('customMatUnit').value.trim() || 'unit';
+        const price = parseFloat(document.getElementById('customMatPrice').value);
+        const qty = parseFloat(document.getElementById('materialQty').value);
+        const isPerKg = document.getElementById('customMatPerKg').value === 'true';
+
+        if (!name || isNaN(price) || price < 0 || isNaN(qty) || qty <= 0) {
+            return alert('Please enter material name, a valid unit cost, and a positive quantity.');
+        }
+
+        const total = isPerKg ? price * qty : price * qty;
+
+        currentJobMaterials.push({
+            id: Date.now(),
+            name,
+            size,
+            unit,
+            price,
+            qty,
+            isPerKg,
+            total
+        });
+
+        document.getElementById('customMatName').value = '';
+        document.getElementById('customMatSize').value = '';
+        document.getElementById('customMatUnit').value = '';
+        document.getElementById('customMatPrice').value = '0';
+        document.getElementById('customMatPerKg').value = 'false';
 
         renderJobTables();
         calculateJob();
@@ -760,18 +832,22 @@
         if (currentJobMaterials.length === 0) {
             materialTbody.innerHTML = '<tr><td colspan="4" class="empty-row">No materials added yet.</td></tr>';
         } else {
-            materialTbody.innerHTML = currentJobMaterials.map((m, i) => `
-                <tr>
-                    <td>${escapeHTML(m.name)}</td>
-                    <td>${Number(m.qty).toLocaleString()} ${escapeHTML(m.unit)}</td>
-                    <td>${formatMoney(m.total)}</td>
-                    <td>
-                        <button type="button" class="btn btn-danger" onclick="removeJobMaterial(${i})">
-                            X
-                        </button>
-                    </td>
-                </tr>
-            `).join('');
+            materialTbody.innerHTML = currentJobMaterials.map((m, i) => {
+                const sizeLabel = m.size ? ` (${escapeHTML(m.size)})` : '';
+                const pricingLabel = m.isPerKg ? ' per kg' : ` / ${escapeHTML(m.unit || 'unit')}`;
+                return `
+                    <tr>
+                        <td>${escapeHTML(m.name)}${sizeLabel}</td>
+                        <td>${Number(m.qty).toLocaleString()} ${escapeHTML(m.isPerKg ? 'kg' : (m.unit || 'unit'))}</td>
+                        <td>${formatMoney(m.total)}</td>
+                        <td>
+                            <button type="button" class="btn btn-danger" onclick="removeJobMaterial(${i})">
+                                X
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
         }
 
         const laborTbody = document.getElementById('jobLaborTable');
@@ -803,15 +879,9 @@
         const contractPrice = parseFloat(document.getElementById('contractPrice').value) || 0;
 
         const directCost = matTotal + laborTotal + overhead;
-
-        // This follows the original calculator's markup logic:
-        // direct cost + target percentage of direct cost.
         const suggestedPrice = directCost * (1 + (targetMarginPct / 100));
-
         const profit = contractPrice - directCost;
-        const netMarginPct = contractPrice > 0
-            ? (profit / contractPrice) * 100
-            : 0;
+        const netMarginPct = contractPrice > 0 ? (profit / contractPrice) * 100 : 0;
 
         document.getElementById('sumMaterial').innerText = formatMoney(matTotal);
         document.getElementById('sumLabor').innerText = formatMoney(laborTotal);
@@ -903,10 +973,7 @@
             .map(row => row.map(csvEscape).join(','))
             .join('\r\n');
 
-        const blob = new Blob([csvContent], {
-            type: 'text/csv;charset=utf-8;'
-        });
-
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
 
@@ -934,11 +1001,26 @@
             .replace(/'/g, '&#039;');
     }
 
-    // Initialize
-    renderDropdowns();
-    renderDatabaseTables();
-    renderJobTables();
-    calculateJob();
+    function initializeApp() {
+        try {
+            renderDropdowns();
+            renderDatabaseTables();
+            renderJobTables();
+            calculateJob();
+        } catch (error) {
+            console.error('Estimator initialization failed:', error);
+            const errorBox = document.getElementById('appError');
+            if (errorBox) {
+                errorBox.style.display = 'block';
+            }
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeApp);
+    } else {
+        initializeApp();
+    }
 </script>
 
 </body>
