@@ -3,1817 +3,696 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Machine Shop Project Estimator & Price Vault</title>
+    <title>Project Estimator</title>
+    <!-- html2pdf for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- html2canvas for Image export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
-            --primary: #1e293b;
-            --accent: #2563eb;
-            --accent-hover: #1d4ed8;
-            --bg: #f8fafc;
+            --primary-color: #1b365d;
+            --secondary-color: #4b6b94;
+            --accent-color: #0076d6;
+            --border-color: #cbd5e1;
+            --bg-color: #f1f5f9;
             --card-bg: #ffffff;
-            --border: #e2e8f0;
-            --text: #0f172a;
-            --text-muted: #64748b;
-            --success: #16a34a;
-            --danger: #dc2626;
         }
 
         * {
             box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Segoe UI', Arial, sans-serif;
         }
 
         body {
-            background-color: var(--bg);
-            color: var(--text);
+            background-color: var(--bg-color);
+            margin: 0;
             padding: 20px;
-            line-height: 1.5;
+            color: #334155;
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1100px;
             margin: 0 auto;
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
         }
 
-        header {
+        .header-title {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 15px;
-            padding-bottom: 20px;
-            margin-bottom: 20px;
-            border-bottom: 2px solid var(--border);
+            border-bottom: 3px solid var(--primary-color);
+            padding-bottom: 12px;
+            margin-bottom: 24px;
         }
 
-        h1 {
-            font-size: 1.5rem;
-            color: var(--primary);
+        .header-title h1 {
+            color: var(--primary-color);
+            margin: 0;
+            font-size: 26px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
         }
 
-        .tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-
-        .tab-btn {
-            padding: 10px 20px;
-            border: 1px solid var(--border);
-            background: var(--card-bg);
-            cursor: pointer;
-            border-radius: 6px;
-            font-weight: 600;
-            color: var(--text-muted);
-            transition: all 0.2s;
-        }
-
-        .tab-btn:hover {
-            border-color: var(--accent);
-            color: var(--accent);
-        }
-
-        .tab-btn.active {
-            background: var(--accent);
-            color: white;
-            border-color: var(--accent);
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        .grid-2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-
-        @media (max-width: 768px) {
-            .grid-2 {
-                grid-template-columns: 1fr;
-            }
-
-            header {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-        }
-
-        .card {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            margin-bottom: 20px;
-        }
-
-        .card-title {
-            font-size: 1.1rem;
-            font-weight: 700;
-            margin-bottom: 15px;
-            color: var(--primary);
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 8px;
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        label {
-            display: block;
-            font-size: 0.875rem;
-            font-weight: 600;
-            margin-bottom: 5px;
-            color: var(--text);
-        }
-
-        input,
-        select {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            font-size: 0.95rem;
-            background: white;
-            color: var(--text);
-        }
-
-        input:focus,
-        select:focus {
-            outline: none;
-            border-color: var(--accent);
-            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
-        }
-
-        .btn {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s, opacity 0.2s;
-        }
-
-        .btn:hover {
-            opacity: 0.9;
-        }
-
-        .btn-primary {
-            background: var(--accent);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: var(--accent-hover);
-            opacity: 1;
-        }
-
-        .btn-danger {
-            background: var(--danger);
-            color: white;
-        }
-
-        .btn-success {
-            background: var(--success);
-            color: white;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-
-        th,
-        td {
-            text-align: left;
-            padding: 10px;
-            border-bottom: 1px solid var(--border);
-            font-size: 0.9rem;
-        }
-
-        th {
-            background-color: var(--bg);
-            font-weight: 600;
-        }
-
-        .table-wrap {
-            overflow-x: auto;
-        }
-
-        .summary-box {
-            background: #f1f5f9;
-            padding: 15px;
-            border-radius: 6px;
-            margin-top: 15px;
-        }
-
-        .summary-row {
-            display: flex;
-            justify-content: space-between;
-            gap: 15px;
-            margin-bottom: 8px;
-            font-size: 0.95rem;
-        }
-
-        .summary-row.total {
-            font-weight: 700;
-            font-size: 1.1rem;
-            border-top: 2px solid var(--border);
-            padding-top: 8px;
-            margin-top: 8px;
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            font-weight: 600;
-        }
-
-        .badge-success {
-            background: #dcfce7;
-            color: var(--success);
-        }
-
-        .badge-danger {
-            background: #fee2e2;
-            color: var(--danger);
-        }
-
-        .empty-row {
-            text-align: center;
-            color: var(--text-muted);
-            padding: 18px;
-        }
-
-        .table-input {
-            min-width: 90px;
-            padding: 6px 8px;
-            font-size: 0.85rem;
-        }
-
-        .table-input-wide {
-            min-width: 160px;
-        }
-
-        .table-actions {
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
-        }
-
-        .btn-small {
-            padding: 6px 10px;
-            font-size: 0.8rem;
-        }
-
-        .database-actions {
-            margin-top: 10px;
+        .action-buttons {
             display: flex;
             gap: 8px;
             flex-wrap: wrap;
         }
 
-        .export-actions {
-            margin-top: 15px;
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
+        .btn {
+            padding: 9px 14px;
+            border: none;
+            border-radius: 5px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
         }
 
-        .export-actions .btn {
-            flex: 1;
-            min-width: 150px;
+        .btn-primary { background-color: #2563eb; color: white; }
+        .btn-primary:hover { background-color: #1d4ed8; }
+        .btn-success { background-color: #059669; color: white; }
+        .btn-success:hover { background-color: #047857; }
+        .btn-info { background-color: #0891b2; color: white; }
+        .btn-info:hover { background-color: #0e7490; }
+        .btn-warning { background-color: #d97706; color: white; }
+        .btn-warning:hover { background-color: #b45309; }
+        .btn-secondary { background-color: #475569; color: white; }
+        .btn-secondary:hover { background-color: #334155; }
+        
+        .btn-add { background-color: #475569; color: white; padding: 6px 12px; font-size: 12px; margin-top: 8px; }
+        .btn-add:hover { background-color: #334155; }
+        .btn-danger { background-color: #ef4444; color: white; padding: 4px 8px; font-size: 11px; border-radius: 3px; }
+        .btn-danger:hover { background-color: #dc2626; }
+
+        .top-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+            margin-bottom: 24px;
         }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group.span-2 {
+            grid-column: span 2;
+        }
+
+        label {
+            font-weight: 700;
+            font-size: 12px;
+            color: #475569;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input[type="text"],
+        input[type="date"],
+        select {
+            padding: 9px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 14px;
+            outline: none;
+            background-color: #ffffff;
+            width: 100%;
+        }
+
+        .uppercase-input {
+            text-transform: uppercase;
+        }
+
+        .currency-input, .qty-input {
+            padding: 9px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 14px;
+            outline: none;
+            background-color: #ffffff;
+            width: 100%;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(0, 118, 214, 0.15);
+        }
+
+        .status-select {
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .status-ongoing {
+            background-color: #fef3c7 !important;
+            color: #d97706 !important;
+            border-color: #fcd34d !important;
+        }
+        .status-finished {
+            background-color: #d1fae5 !important;
+            color: #059669 !important;
+            border-color: #6ee7b7 !important;
+        }
+
+        .financial-summary {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 6px;
+            padding: 16px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .summary-card {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .summary-card .val {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--primary-color);
+            margin-top: 4px;
+        }
+
+        .summary-card .val.profit-gain {
+            color: #16a34a !important;
+        }
+
+        .summary-card .val.profit-loss {
+            color: #dc2626 !important;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-top: 24px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 6px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+        }
+
+        th {
+            background-color: #f1f5f9;
+            color: #334155;
+            text-align: left;
+            padding: 10px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #cbd5e1;
+        }
+
+        td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        tfoot tr {
+            background-color: #f8fafc;
+            font-weight: bold;
+        }
+
+        tfoot td {
+            border-top: 2px solid #cbd5e1;
+            border-bottom: 2px solid #cbd5e1;
+            color: var(--primary-color);
+            font-size: 13px;
+        }
+
+        .subtotal-label {
+            text-align: right;
+            padding-right: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .subtotal-val-input {
+            font-weight: 800;
+            background-color: #f1f5f9 !important;
+            color: var(--primary-color);
+        }
+
+        .col-action { width: 50px; text-align: center; }
 
         @media print {
-            body {
-                background: white;
-                padding: 0;
-            }
-
-            .tabs,
-            .btn,
-            .card:not(#quotePrintArea),
-            .tab-content:not(.active),
-            .tab-btn,
-            header,
-            #database,
-            #estimator > .grid-2 > div:first-child,
-            #estimator > .grid-2 > div:last-child .card:not(#quotePrintArea) {
-                display: none !important;
-            }
-
-            .container {
-                max-width: 100%;
-            }
-
-            #quotePrintArea {
-                display: block !important;
-                box-shadow: none;
-                border: 1px solid #ccc;
-                margin: 0;
-                padding: 20px;
-            }
+            body { padding: 0; background: #fff; }
+            .container { box-shadow: none; padding: 0; width: 100%; max-width: 100%; }
+            .action-buttons, .btn-add, .btn-danger, .col-action { display: none !important; }
+            input, select { border: none !important; background: transparent !important; padding: 0 !important; }
         }
     </style>
 </head>
 <body>
 
-<div id="appError" style="display:none; margin-bottom:16px; padding:12px 16px; border:1px solid #fca5a5; background:#fef2f2; color:#991b1b; border-radius:8px; font-weight:600;">The estimator could not initialize. Please refresh the page or check the browser console.</div>
+<div class="container" id="estimatorSheet">
+    
+    <div class="header-title">
+        <h1>Project Estimator</h1>
+        <div class="action-buttons" data-html2canvas-ignore="true">
+            <button class="btn btn-warning" onclick="saveProjectFile()">💾 Save Project File</button>
+            <button class="btn btn-secondary" onclick="document.getElementById('importFileInput').click()">📂 Load Saved File</button>
+            <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="loadProjectFile(event)">
 
-<div class="container">
-    <header>
-        <h1>🛠️ Machine Shop Project Estimator & Price Vault</h1>
-        <span style="font-weight:600; color:var(--text-muted);">Currency: PHP (₱)</span>
-    </header>
-
-    <div class="tabs">
-        <button type="button" class="tab-btn active" onclick="switchTab('estimator', this)">Job Cost Estimator</button>
-        <button type="button" class="tab-btn" onclick="switchTab('database', this)">Rates & Materials Database</button>
-        <button type="button" class="tab-btn" onclick="switchTab('savedProjects', this); renderSavedProjects()">Saved Projects</button>
-    </div>
-
-    <!-- TAB 1: ESTIMATOR -->
-    <div id="estimator" class="tab-content active">
-        <div class="grid-2">
-            <div>
-                <!-- Job Setup -->
-                <div class="card">
-                    <div class="card-title">Project & Client Info</div>
-
-                    <div class="form-group">
-                        <label for="jobTitle">Project / Job Title</label>
-                        <input type="text" id="jobTitle" placeholder="e.g. Flange Shaft Machining & Keyway">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="clientName">Client Name</label>
-                        <input type="text" id="clientName" placeholder="e.g. ABC Manufacturing">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="projectStatus">Project Status</label>
-                        <select id="projectStatus">
-                            <option value="Unfinished" selected>Unfinished</option>
-                            <option value="Finished">Finished</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="contractPrice">Contract Price Offered / Target (₱)</label>
-                        <input type="number" id="contractPrice" value="0" min="0" step="0.01" oninput="calculateJob()">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="downpayment">Client Downpayment (₱)</label>
-                        <input type="number" id="downpayment" value="0" min="0" step="0.01" oninput="calculateJob()">
-                    </div>
-                </div>
-
-                <!-- Materials Section -->
-                <div class="card">
-                    <div class="card-title">Material Requirements</div>
-
-                    <div style="display:flex; gap:10px;">
-                        <div class="form-group" style="flex:1;">
-                            <label id="materialQtyLabel" for="materialQty">Quantity / Units Needed</label>
-                            <input type="number" id="materialQty" value="1" min="0.1" step="any">
-                        </div>
-                    </div>
-
-                    <div style="border-top:1px solid var(--border); margin:20px 0 15px; padding-top:15px;">
-                        <div class="form-group">
-                            <label for="customMatName">Custom Material Name</label>
-                            <input type="text" id="customMatName" placeholder="e.g. Brass Rod">
-                        </div>
-
-                        <div class="form-group">
-                            <label for="customMatSize">Custom Size / Spec</label>
-                            <input type="text" id="customMatSize" placeholder="e.g. 20mm dia x 1m">
-                        </div>
-
-                        <div style="display:flex; gap:10px;">
-                            <div class="form-group" style="flex:1;">
-                                <label for="customMatUnit">Unit</label>
-                                <input type="text" id="customMatUnit" placeholder="e.g. pc, kg, meter">
-                            </div>
-
-                            <div class="form-group" style="flex:1;">
-                                <label id="customMatPriceLabel" for="customMatPrice">Cost per Unit (₱)</label>
-                                <input type="number" id="customMatPrice" value="0" min="0" step="0.01">
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="customMatPerKg">Material Price Type</label>
-                            <select id="customMatPerKg" onchange="updateMaterialTypeUI()">
-                                <option value="false">Per Unit / Piece / Length</option>
-                                <option value="true">Per KG</option>
-                            </select>
-                        </div>
-
-                        <button type="button" class="btn btn-primary" onclick="addCustomMaterialToJob()">Add Custom Material</button>
-                    </div>
-
-                    <div class="table-wrap">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Material</th>
-                                    <th>Qty</th>
-                                    <th>Cost (₱)</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="jobMaterialsTable"></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Labor & Machining Section -->
-                <div class="card">
-                    <div class="card-title">Machining & Labor Hours</div>
-
-                    <div class="form-group">
-                        <label for="laborSelect">Select Operation / Machine</label>
-                        <select id="laborSelect"></select>
-                    </div>
-
-                    <div style="display:flex; gap:10px;">
-                        <div class="form-group" style="flex:1;">
-                            <label for="laborHours">Estimated Hours</label>
-                            <input type="number" id="laborHours" value="1" min="0.1" step="any">
-                        </div>
-
-                        <div class="form-group" style="align-self:flex-end;">
-                            <button type="button" class="btn btn-primary" onclick="addLaborToJob()">Add Operation</button>
-                        </div>
-                    </div>
-
-                    <div class="table-wrap">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Operation</th>
-                                    <th>Hours</th>
-                                    <th>Cost (₱)</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="jobLaborTable"></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Services Section -->
-                <div class="card">
-                    <div class="card-title">Services</div>
-
-                    <div class="form-group">
-                        <label for="serviceName">Service Description</label>
-                        <input type="text" id="serviceName" placeholder="e.g. Piston boring, polishing, or finishing">
-                    </div>
-
-                    <div style="display:flex; gap:10px; align-items:flex-end;">
-                        <div class="form-group" style="flex:1;">
-                            <label for="serviceQty">Quantity</label>
-                            <input type="number" id="serviceQty" value="1" min="0.1" step="any">
-                        </div>
-
-                        <div class="form-group" style="flex:1;">
-                            <label for="serviceUnitPrice">Unit Price (₱)</label>
-                            <input type="number" id="serviceUnitPrice" value="0" min="0" step="0.01">
-                        </div>
-
-                        <div class="form-group" style="align-self:flex-end;">
-                            <button type="button" class="btn btn-primary" onclick="addServiceToJob()">Add Service</button>
-                        </div>
-                    </div>
-
-                    <div class="table-wrap">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Service</th>
-                                    <th>Qty</th>
-                                    <th>Unit Price</th>
-                                    <th>Total</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="jobServicesTable"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Cost Summary Column -->
-            <div>
-                <div class="card" id="quotePrintArea">
-                    <div class="card-title">Cost Breakdown & Profitability</div>
-
-                    <div class="form-group">
-                        <label for="overheadCost">Overhead / Setup Fee (₱)</label>
-                        <input type="number" id="overheadCost" value="500" min="0" step="0.01" oninput="calculateJob()">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="targetMargin">Target Profit Margin (%)</label>
-                        <input type="number" id="targetMargin" value="25" min="0" step="0.1" oninput="calculateJob()">
-                    </div>
-
-                    <div class="summary-box">
-                        <div class="summary-row">
-                            <span>Total Material Cost:</span>
-                            <span id="sumMaterial">₱0.00</span>
-                        </div>
-
-                        <div class="summary-row">
-                            <span>Total Machining Labor:</span>
-                            <span id="sumLabor">₱0.00</span>
-                        </div>
-
-                        <div class="summary-row">
-                            <span>Total Services:</span>
-                            <span id="sumServices">₱0.00</span>
-                        </div>
-
-                        <div class="summary-row">
-                            <span>Overhead / Setup:</span>
-                            <span id="sumOverhead">₱0.00</span>
-                        </div>
-
-                        <div class="summary-row total">
-                            <span>Direct Shop Cost:</span>
-                            <span id="sumDirectCost">₱0.00</span>
-                        </div>
-
-                        <div class="summary-row" style="margin-top:10px;">
-                            <span>Suggested Quote Price (+Margin):</span>
-                            <span id="sumSuggestedPrice" style="font-weight:700; color:var(--accent);">₱0.00</span>
-                        </div>
-
-                        <div class="summary-row">
-                            <span>Entered Contract Price:</span>
-                            <span id="sumContractPrice">₱0.00</span>
-                        </div>
-
-                        <div class="summary-row">
-                            <span>Client Downpayment:</span>
-                            <span id="sumDownpayment">₱0.00</span>
-                        </div>
-
-                        <div class="summary-row total">
-                            <span>Balance Due:</span>
-                            <span id="sumBalanceDue">₱0.00</span>
-                        </div>
-
-                        <div class="summary-row total">
-                            <span>Projected Profit / Loss:</span>
-                            <span id="sumProfit">₱0.00</span>
-                        </div>
-
-                        <div class="summary-row">
-                            <span>Net Profit Margin:</span>
-                            <span id="sumMarginBadge">
-                                <span class="badge badge-success">0.0%</span>
-                            </span>
-                        </div>
-                    </div>
-
-                    <div class="export-actions">
-                        <button type="button" class="btn btn-success" id="saveProjectButton" onclick="saveProject()">
-                            Save Project
-                        </button>
-                        <button type="button" class="btn btn-success" onclick="exportSummaryCSV()">
-                            Export CSV
-                        </button>
-                        <button type="button" class="btn btn-primary" onclick="printQuotePDF()">
-                            Save as PDF
-                        </button>
-                        <button type="button" class="btn btn-primary" onclick="exportQuotePNG()">
-                            Export PNG
-                        </button>
-                    </div>
-                </div>
-            </div>
+            <button class="btn btn-primary" onclick="exportPDF()">Export PDF</button>
+            <button class="btn btn-success" onclick="exportImage('png')">Save PNG</button>
+            <button class="btn btn-info" onclick="exportImage('jpeg')">Save JPEG</button>
         </div>
     </div>
 
-    <!-- TAB 3: SAVED PROJECTS -->
-    <div id="savedProjects" class="tab-content">
-        <div class="card">
-            <div class="card-title">Saved Projects</div>
-            <p style="color:var(--text-muted); margin-bottom:15px;">Projects are saved in this browser. You can reopen one, change its status, update its details, or delete it.</p>
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Project</th>
-                            <th>Client</th>
-                            <th>Status</th>
-                            <th>Last Updated</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="savedProjectsTable"></tbody>
-                </table>
-            </div>
+    <div class="top-grid">
+        <div class="form-group span-2">
+            <label for="projectName">Name of the Project</label>
+            <input type="text" id="projectName" class="uppercase-input" placeholder="ENTER PROJECT NAME" oninput="this.value = this.value.toUpperCase()">
+        </div>
+
+        <div class="form-group">
+            <label for="targetDate">Target Date</label>
+            <input type="date" id="targetDate">
+        </div>
+
+        <div class="form-group">
+            <label for="workStatus">Status of the Work</label>
+            <select id="workStatus" class="status-select status-ongoing" onchange="updateStatusColor(this)">
+                <option value="ongoing" class="status-ongoing">Ongoing</option>
+                <option value="finished" class="status-finished">Finished</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="contractPrice">Contract Price (₱)</label>
+            <input type="text" id="contractPrice" class="currency-input" placeholder="0.00" oninput="formatCurrencyInput(this); calculateTotals();">
+        </div>
+
+        <div class="form-group">
+            <label for="downpayment">Downpayment (₱)</label>
+            <input type="text" id="downpayment" class="currency-input" placeholder="0.00" oninput="formatCurrencyInput(this); calculateTotals();">
         </div>
     </div>
 
-    <!-- TAB 2: RATES DATABASE -->
-    <div id="database" class="tab-content">
-        <div class="grid-2">
-            <!-- Material Rates -->
-            <div class="card">
-                <div class="card-title">Material Rates Vault (₱)</div>
-
-                <div class="form-group">
-                    <label for="newMatName">Material Name</label>
-                    <input type="text" id="newMatName" placeholder="e.g. Mild Steel Plate">
-                </div>
-
-                <div class="form-group">
-                    <label for="newMatSize">Size / Spec</label>
-                    <input type="text" id="newMatSize" placeholder="e.g. 12mm, 1/2 x 4 x 8, 1 inch dia">
-                </div>
-
-                <div class="form-group">
-                    <label for="newMatUnit">Unit (e.g. kg, pc, meter, length)</label>
-                    <input type="text" id="newMatUnit" placeholder="e.g. pc">
-                </div>
-
-                <div class="form-group">
-                    <label for="newMatPrice">Unit Price (₱)</label>
-                    <input type="number" id="newMatPrice" placeholder="0.00" min="0" step="0.01">
-                </div>
-
-                <button type="button" class="btn btn-primary" onclick="addMaterialRate()">Save Material Rate</button>
-
-                <div class="table-wrap">
-                    <table style="margin-top:20px;">
-                        <thead>
-                            <tr>
-                                <th>Item Name</th>
-                                <th>Size / Spec</th>
-                                <th>Unit</th>
-                                <th>Price (₱)</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="dbMaterialsTable"></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Labor Rates -->
-            <div class="card">
-                <div class="card-title">Machine Hourly Rates (₱/hr)</div>
-
-                <div class="form-group">
-                    <label for="newLaborName">Machine / Operation Name</label>
-                    <input type="text" id="newLaborName" placeholder="e.g. Lathe Turning Work">
-                </div>
-
-                <div class="form-group">
-                    <label for="newLaborRate">Hourly Rate (₱/hr)</label>
-                    <input type="number" id="newLaborRate" placeholder="0.00" min="0" step="0.01">
-                </div>
-
-                <button type="button" class="btn btn-primary" onclick="addLaborRate()">Save Hourly Rate</button>
-
-                <div class="table-wrap">
-                    <table style="margin-top:20px;">
-                        <thead>
-                            <tr>
-                                <th>Machine / Process</th>
-                                <th>Rate (₱/hr)</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="dbLaborTable"></tbody>
-                    </table>
-                </div>
-            </div>
+    <div class="financial-summary">
+        <div class="summary-card">
+            <label>Total Capital / Direct Cost (Materials + Labor)</label>
+            <div class="val" id="dispTotalCapital">₱0.00</div>
         </div>
-
-        <div class="card" style="margin-top: 20px;">
-            <div class="card-title">Service Rates Vault (₱)</div>
-
-            <div class="form-group">
-                <label for="newServiceName">Service Name</label>
-                <input type="text" id="newServiceName" placeholder="e.g. Surface Finishing, Polishing, Assembly">
-            </div>
-
-            <div class="form-group">
-                <label for="newServiceRate">Service Rate (₱)</label>
-                <input type="number" id="newServiceRate" placeholder="0.00" min="0" step="0.01">
-            </div>
-
-            <button type="button" class="btn btn-primary" onclick="addServiceRate()">Save Service Rate</button>
-
-            <div class="table-wrap">
-                <table style="margin-top:20px;">
-                    <thead>
-                        <tr>
-                            <th>Service</th>
-                            <th>Rate (₱)</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="dbServiceTable"></tbody>
-                </table>
-            </div>
+        <div class="summary-card">
+            <label id="lblEstimatedProfit">Estimated Net Profit / (Loss)</label>
+            <div class="val" id="dispEstimatedProfit">₱0.00</div>
+        </div>
+        <div class="summary-card">
+            <label>Remaining Balance Due</label>
+            <div class="val" id="dispRemainingBalance">₱0.00</div>
         </div>
     </div>
+
+    <!-- Job Description / Services Section -->
+    <div class="section-title">
+        <span>Job Description & Services</span>
+        <button class="btn btn-add" onclick="addRow('jobTable')" data-html2canvas-ignore="true">+ Add Service</button>
+    </div>
+    <table id="jobTable">
+        <thead>
+            <tr>
+                <th>Job / Service Description</th>
+                <th style="width: 120px;">Qty</th>
+                <th style="width: 160px;">Unit Price (₱)</th>
+                <th style="width: 160px;">Total Price (₱)</th>
+                <th class="col-action" data-html2canvas-ignore="true">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><input type="text" placeholder="e.g. Lathe Turning / Cylinder Boring"></td>
+                <td><input type="text" class="qty-input" placeholder="0" oninput="formatQtyInput(this); calculateTotals()"></td>
+                <td><input type="text" class="unit-price currency-input" placeholder="0.00" oninput="formatCurrencyInput(this); calculateTotals()"></td>
+                <td><input type="text" class="total-price currency-input" placeholder="0.00" readonly></td>
+                <td class="col-action" data-html2canvas-ignore="true"><button class="btn btn-danger" onclick="removeRow(this)">X</button></td>
+            </tr>
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="3" class="subtotal-label">Total Job Services Amount:</td>
+                <td><input type="text" id="subtotalJob" class="currency-input subtotal-val-input" placeholder="₱0.00" readonly></td>
+                <td class="col-action" data-html2canvas-ignore="true"></td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <!-- Materials Section (Parts & Standard Components) -->
+    <div class="section-title">
+        <span>Materials (Parts & Standard Components)</span>
+        <button class="btn btn-add" onclick="addRow('matPartsTable')" data-html2canvas-ignore="true">+ Add Item</button>
+    </div>
+    <table id="matPartsTable">
+        <thead>
+            <tr>
+                <th>Name of Materials</th>
+                <th style="width: 120px;">Quantity</th>
+                <th style="width: 160px;">Unit Price (₱)</th>
+                <th style="width: 160px;">Total Price (₱)</th>
+                <th class="col-action" data-html2canvas-ignore="true">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><input type="text" placeholder="e.g. Bronze Bushing / Bearings"></td>
+                <td><input type="text" class="qty-input" placeholder="0" oninput="formatQtyInput(this); calculateTotals()"></td>
+                <td><input type="text" class="unit-price currency-input" placeholder="0.00" oninput="formatCurrencyInput(this); calculateTotals()"></td>
+                <td><input type="text" class="total-price currency-input" placeholder="0.00" readonly></td>
+                <td class="col-action" data-html2canvas-ignore="true"><button class="btn btn-danger" onclick="removeRow(this)">X</button></td>
+            </tr>
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="3" class="subtotal-label">Total Parts & Standard Materials:</td>
+                <td><input type="text" id="subtotalMatParts" class="currency-input subtotal-val-input" placeholder="₱0.00" readonly></td>
+                <td class="col-action" data-html2canvas-ignore="true"></td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <!-- Materials Section (Raw Metals / Sold By Weight) -->
+    <div class="section-title">
+        <span>Materials (Raw Metals / Sold By Weight)</span>
+        <button class="btn btn-add" onclick="addRow('matWeightTable')" data-html2canvas-ignore="true">+ Add Raw Material</button>
+    </div>
+    <table id="matWeightTable">
+        <thead>
+            <tr>
+                <th>Name of Materials</th>
+                <th style="width: 120px;">Quantity (kg)</th>
+                <th style="width: 160px;">Price per kg (₱)</th>
+                <th style="width: 160px;">Total Price (₱)</th>
+                <th class="col-action" data-html2canvas-ignore="true">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><input type="text" placeholder="e.g. Shafting / Cast Iron Rod"></td>
+                <td><input type="text" class="qty-input" placeholder="0" oninput="formatQtyInput(this); calculateTotals()"></td>
+                <td><input type="text" class="unit-price currency-input" placeholder="0.00" oninput="formatCurrencyInput(this); calculateTotals()"></td>
+                <td><input type="text" class="total-price currency-input" placeholder="0.00" readonly></td>
+                <td class="col-action" data-html2canvas-ignore="true"><button class="btn btn-danger" onclick="removeRow(this)">X</button></td>
+            </tr>
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="3" class="subtotal-label">Total Raw Metals Amount:</td>
+                <td><input type="text" id="subtotalMatWeight" class="currency-input subtotal-val-input" placeholder="₱0.00" readonly></td>
+                <td class="col-action" data-html2canvas-ignore="true"></td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <!-- Labor Section -->
+    <div class="section-title">
+        <span>Labor Costs</span>
+        <button class="btn btn-add" onclick="addRow('laborTable')" data-html2canvas-ignore="true">+ Add Labor</button>
+    </div>
+    <table id="laborTable">
+        <thead>
+            <tr>
+                <th>Labor Description / Machinist</th>
+                <th style="width: 120px;">Days Worked</th>
+                <th style="width: 160px;">Wage per Day (₱)</th>
+                <th style="width: 160px;">Total Labor Cost (₱)</th>
+                <th class="col-action" data-html2canvas-ignore="true">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><input type="text" placeholder="e.g. Machinist / Welder"></td>
+                <td><input type="text" class="qty-input" placeholder="0" oninput="formatQtyInput(this); calculateTotals()"></td>
+                <td><input type="text" class="unit-price currency-input" placeholder="0.00" oninput="formatCurrencyInput(this); calculateTotals()"></td>
+                <td><input type="text" class="total-price currency-input" placeholder="0.00" readonly></td>
+                <td class="col-action" data-html2canvas-ignore="true"><button class="btn btn-danger" onclick="removeRow(this)">X</button></td>
+            </tr>
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="3" class="subtotal-label">Total Labor Costs Amount:</td>
+                <td><input type="text" id="subtotalLabor" class="currency-input subtotal-val-input" placeholder="₱0.00" readonly></td>
+                <td class="col-action" data-html2canvas-ignore="true"></td>
+            </tr>
+        </tfoot>
+    </table>
+
 </div>
 
 <script>
-    const defaultMaterials = [
-        { id: 1, name: 'Mild Steel Plate', size: '1/2" x 4\' x 8\'', unit: 'sheet', price: 8500 },
-        { id: 2, name: '304 Stainless Round Bar', size: '1" dia x 20ft', unit: 'length', price: 3200 },
-        { id: 3, name: 'Angle Bar', size: '2" x 2" x 1/4" (20ft)', unit: 'length', price: 1450 },
-        { id: 4, name: 'Tubular Steel', size: '2" x 2" x 1.5mm', unit: 'length', price: 950 }
-    ];
-
-    const defaultLabor = [
-        { id: 1, name: 'Lathe Machine Turning', rate: 450 },
-        { id: 2, name: 'Milling Machine Work', rate: 550 },
-        { id: 3, name: 'Horizontal Boring', rate: 750 },
-        { id: 4, name: 'SMAW/MIG Welding & Fab', rate: 350 },
-        { id: 5, name: 'Bench Work & Surface Grinding', rate: 400 }
-    ];
-
-    const defaultServices = [
-        { id: 1, name: 'Surface Finishing', rate: 800 },
-        { id: 2, name: 'Polishing', rate: 600 },
-        { id: 3, name: 'Inspection & QC', rate: 500 },
-        { id: 4, name: 'Assembly & Fitting', rate: 700 }
-    ];
-
-    function loadStoredData(key, fallback) {
-        try {
-            const stored = localStorage.getItem(key);
-            if (!stored) return fallback.map(item => ({ ...item }));
-            const parsed = JSON.parse(stored);
-            return Array.isArray(parsed) ? parsed : fallback.map(item => ({ ...item }));
-        } catch (error) {
-            console.warn('Could not load saved data:', error);
-            return fallback.map(item => ({ ...item }));
+    function updateStatusColor(selectElement) {
+        if (selectElement.value === 'ongoing') {
+            selectElement.className = 'status-select status-ongoing';
+        } else if (selectElement.value === 'finished') {
+            selectElement.className = 'status-select status-finished';
         }
     }
 
-    let materials = loadStoredData('ms_materials', defaultMaterials);
-    let laborRates = loadStoredData('ms_labor', defaultLabor);
-    let serviceRates = loadStoredData('ms_services', defaultServices);
-    let savedProjects = loadStoredData('ms_projects', []);
-    let currentJobMaterials = [];
-    let currentJobLabor = [];
-    let currentJobServices = [];
-    let editingRow = null;
-    let editingProjectId = null;
-
-    function saveData() {
-        localStorage.setItem('ms_materials', JSON.stringify(materials));
-        localStorage.setItem('ms_labor', JSON.stringify(laborRates));
-        localStorage.setItem('ms_services', JSON.stringify(serviceRates));
-        renderDropdowns();
-        renderDatabaseTables();
+    function parseNumber(value) {
+        if (!value) return 0;
+        const clean = value.toString().replace(/[^0-9.]/g, '');
+        return parseFloat(clean) || 0;
     }
 
-    function saveProjectsData() {
-        localStorage.setItem('ms_projects', JSON.stringify(savedProjects));
+    function formatNumberWithCommas(num) {
+        if (isNaN(num) || num === 0) return '0.00';
+        const parts = Math.abs(num).toFixed(2).split('.');
+        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        return parts.join('.');
     }
 
-    function switchTab(tabId, button) {
-        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-
-        if (button) {
-            button.classList.add('active');
-        }
-
-        document.getElementById(tabId).classList.add('active');
+    function formatCurrencyWithSymbol(num) {
+        const absoluteVal = Math.abs(num).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        return (num < 0 ? '-₱' : '₱') + absoluteVal;
     }
 
-    function getCurrentProjectData() {
-        return {
-            title: document.getElementById('jobTitle').value.trim() || 'Untitled Project',
-            client: document.getElementById('clientName').value.trim() || 'N/A',
-            status: document.getElementById('projectStatus').value || 'Unfinished',
-            contractPrice: document.getElementById('contractPrice').value || '0',
-            downpayment: document.getElementById('downpayment').value || '0',
-            overheadCost: document.getElementById('overheadCost').value || '0',
-            targetMargin: document.getElementById('targetMargin').value || '0',
-            materials: currentJobMaterials.map(item => ({ ...item })),
-            labor: currentJobLabor.map(item => ({ ...item })),
-            services: currentJobServices.map(item => ({ ...item }))
-        };
+    function formatCurrencyInput(input) {
+        let value = input.value.replace(/[^0-9.]/g, '');
+        const parts = value.split('.');
+        if (parts.length > 2) value = parts[0] + '.' + parts.slice(1).join('');
+        if (parts[0]) parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        input.value = parts.join('.');
     }
 
-    function saveProject() {
-        const projectData = getCurrentProjectData();
-        const now = new Date().toISOString();
-        const existingProject = editingProjectId === null
-            ? null
-            : savedProjects.find(project => project.id === editingProjectId);
-
-        if (existingProject) {
-            Object.assign(existingProject, projectData, { updatedAt: now });
-        } else {
-            editingProjectId = Date.now();
-            savedProjects.push({
-                id: editingProjectId,
-                ...projectData,
-                createdAt: now,
-                updatedAt: now
-            });
-        }
-
-        saveProjectsData();
-        updateSaveProjectButton();
-        renderSavedProjects();
-        alert(existingProject ? 'Project updated.' : 'Project saved.');
+    function formatQtyInput(input) {
+        let value = input.value.replace(/[^0-9.]/g, '');
+        const parts = value.split('.');
+        if (parts.length > 2) value = parts[0] + '.' + parts.slice(1).join('');
+        if (parts[0]) parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        input.value = parts.join('.');
     }
 
-    function updateSaveProjectButton() {
-        const button = document.getElementById('saveProjectButton');
-        if (button) {
-            button.textContent = editingProjectId === null ? 'Save Project' : 'Update Project';
-        }
-    }
-
-    function formatProjectDate(value) {
-        if (!value) return '—';
-        return new Date(value).toLocaleDateString('en-PH', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
-        });
-    }
-
-    function renderSavedProjects() {
-        const tbody = document.getElementById('savedProjectsTable');
-        if (!tbody) return;
-
-        if (savedProjects.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" class="empty-row">No saved projects yet.</td></tr>';
-            return;
-        }
-
-        tbody.innerHTML = savedProjects
-            .slice()
-            .sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt))
-            .map(project => `
-                <tr>
-                    <td><strong>${escapeHTML(project.title)}</strong></td>
-                    <td>${escapeHTML(project.client)}</td>
-                    <td>
-                        <select aria-label="Status for ${escapeHTML(project.title)}" onchange="updateProjectStatus(${project.id}, this.value)">
-                            <option value="Unfinished" ${project.status !== 'Finished' ? 'selected' : ''}>Unfinished</option>
-                            <option value="Finished" ${project.status === 'Finished' ? 'selected' : ''}>Finished</option>
-                        </select>
-                    </td>
-                    <td>${formatProjectDate(project.updatedAt || project.createdAt)}</td>
-                    <td>
-                        <button type="button" class="btn btn-primary" onclick="loadProject(${project.id})">Edit</button>
-                        <button type="button" class="btn btn-danger" onclick="deleteProject(${project.id})">Delete</button>
-                    </td>
-                </tr>
-            `).join('');
-    }
-
-    function updateProjectStatus(id, status) {
-        const project = savedProjects.find(item => item.id === id);
-        if (!project) return;
-
-        project.status = status === 'Finished' ? 'Finished' : 'Unfinished';
-        project.updatedAt = new Date().toISOString();
-        saveProjectsData();
-
-        if (editingProjectId === id) {
-            document.getElementById('projectStatus').value = project.status;
-        }
-        renderSavedProjects();
-    }
-
-    function loadProject(id) {
-        const project = savedProjects.find(item => item.id === id);
-        if (!project) return;
-
-        editingProjectId = id;
-        document.getElementById('jobTitle').value = project.title || '';
-        document.getElementById('clientName').value = project.client || '';
-        document.getElementById('projectStatus').value = project.status || 'Unfinished';
-        document.getElementById('contractPrice').value = project.contractPrice || '0';
-        document.getElementById('downpayment').value = project.downpayment || '0';
-        document.getElementById('overheadCost').value = project.overheadCost || '0';
-        document.getElementById('targetMargin').value = project.targetMargin || '0';
-        currentJobMaterials = (project.materials || []).map(item => ({ ...item }));
-        currentJobLabor = (project.labor || []).map(item => ({ ...item }));
-        currentJobServices = (project.services || []).map(item => ({ ...item }));
-
-        renderJobTables();
-        calculateJob();
-        updateSaveProjectButton();
-        switchTab('estimator', document.querySelector('.tab-btn'));
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    function deleteProject(id) {
-        const project = savedProjects.find(item => item.id === id);
-        if (!project || !window.confirm(`Delete saved project "${project.title}"?`)) return;
-
-        savedProjects = savedProjects.filter(item => item.id !== id);
-        saveProjectsData();
-
-        if (editingProjectId === id) {
-            editingProjectId = null;
-            updateSaveProjectButton();
-        }
-        renderSavedProjects();
-    }
-
-    function formatMoney(value) {
-        return '₱' + Number(value || 0).toLocaleString(undefined, {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        });
-    }
-
-    function getMaterialLabel(material) {
-        const sizePart = material.size && String(material.size).trim() ? ` - ${material.size}` : '';
-        return `${material.name}${sizePart} - ₱${Number(material.price).toLocaleString()} / ${material.unit}`;
-    }
-
-    function renderDropdowns() {
-        const matSel = document.getElementById('materialSelect');
-        if (matSel) {
-            if (materials.length === 0) {
-                matSel.innerHTML = '<option value="">No materials available</option>';
-            } else {
-                matSel.innerHTML = materials.map(m => `
-                    <option value="${m.id}">
-                        ${escapeHTML(getMaterialLabel(m))}
-                    </option>
-                `).join('');
-            }
-        }
-
-        const labSel = document.getElementById('laborSelect');
-
-        if (laborRates.length === 0) {
-            if (labSel) {
-                labSel.innerHTML = '<option value="">No labor rates available</option>';
-            }
-        } else if (labSel) {
-            labSel.innerHTML = laborRates.map(l => `
-                <option value="${l.id}">
-                    ${escapeHTML(l.name)} - ₱${Number(l.rate).toLocaleString()} / hr
-                </option>
-            `).join('');
-        }
-    }
-
-    function renderDatabaseTables() {
-        const matTbody = document.getElementById('dbMaterialsTable');
-
-        if (materials.length === 0) {
-            matTbody.innerHTML = '<tr><td colspan="5" class="empty-row">No material rates saved.</td></tr>';
-        } else {
-            matTbody.innerHTML = materials.map(m => `
-                <tr>
-                    <td>${escapeHTML(m.name)}</td>
-                    <td>${escapeHTML(m.size || '—')}</td>
-                    <td>${escapeHTML(m.unit)}</td>
-                    <td>${formatMoney(m.price)}</td>
-                    <td>
-                        <button type="button" class="btn btn-danger" onclick="deleteMaterialRate(${m.id})">
-                            Delete
-                        </button>
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        const labTbody = document.getElementById('dbLaborTable');
-
-        if (laborRates.length === 0) {
-            labTbody.innerHTML = '<tr><td colspan="3" class="empty-row">No labor rates saved.</td></tr>';
-        } else {
-            labTbody.innerHTML = laborRates.map(l => `
-                <tr>
-                    <td>${escapeHTML(l.name)}</td>
-                    <td>${formatMoney(l.rate)}</td>
-                    <td>
-                        <button type="button" class="btn btn-danger" onclick="deleteLaborRate(${l.id})">
-                            Delete
-                        </button>
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        const serviceTbody = document.getElementById('dbServiceTable');
-
-        if (serviceRates.length === 0) {
-            serviceTbody.innerHTML = '<tr><td colspan="3" class="empty-row">No service rates saved.</td></tr>';
-        } else {
-            serviceTbody.innerHTML = serviceRates.map(s => `
-                <tr>
-                    <td>${escapeHTML(s.name)}</td>
-                    <td>${formatMoney(s.rate)}</td>
-                    <td>
-                        <button type="button" class="btn btn-danger" onclick="deleteServiceRate(${s.id})">
-                            Delete
-                        </button>
-                    </td>
-                </tr>
-            `).join('');
-        }
-    }
-
-    function addMaterialRate() {
-        const name = document.getElementById('newMatName').value.trim();
-        const size = document.getElementById('newMatSize').value.trim();
-        const unit = document.getElementById('newMatUnit').value.trim() || 'unit';
-        const price = parseFloat(document.getElementById('newMatPrice').value);
-
-        if (!name || isNaN(price) || price < 0) {
-            return alert('Please enter a material name and a valid unit price.');
-        }
-
-        materials.push({
-            id: Date.now(),
-            name,
-            size,
-            unit,
-            price
-        });
-
-        saveData();
-
-        document.getElementById('newMatName').value = '';
-        document.getElementById('newMatSize').value = '';
-        document.getElementById('newMatUnit').value = '';
-        document.getElementById('newMatPrice').value = '';
-    }
-
-    function deleteMaterialRate(id) {
-        materials = materials.filter(m => m.id !== id);
-        saveData();
-        currentJobMaterials = currentJobMaterials.filter(m => m.id !== id);
-        renderJobTables();
-        calculateJob();
-    }
-
-    function addLaborRate() {
-        const name = document.getElementById('newLaborName').value.trim();
-        const rate = parseFloat(document.getElementById('newLaborRate').value);
-
-        if (!name || isNaN(rate) || rate < 0) {
-            return alert('Please enter valid labor details.');
-        }
-
-        laborRates.push({
-            id: Date.now(),
-            name,
-            rate
-        });
-
-        saveData();
-
-        document.getElementById('newLaborName').value = '';
-        document.getElementById('newLaborRate').value = '';
-    }
-
-    function deleteLaborRate(id) {
-        laborRates = laborRates.filter(l => l.id !== id);
-        saveData();
-        currentJobLabor = currentJobLabor.filter(l => l.id !== id);
-        renderJobTables();
-        calculateJob();
-    }
-
-    function addServiceRate() {
-        const name = document.getElementById('newServiceName').value.trim();
-        const rate = parseFloat(document.getElementById('newServiceRate').value);
-
-        if (!name || isNaN(rate) || rate < 0) {
-            return alert('Please enter a valid service name and rate.');
-        }
-
-        serviceRates.push({
-            id: Date.now(),
-            name,
-            rate
-        });
-
-        saveData();
-
-        document.getElementById('newServiceName').value = '';
-        document.getElementById('newServiceRate').value = '';
-    }
-
-    function deleteServiceRate(id) {
-        serviceRates = serviceRates.filter(s => s.id !== id);
-        saveData();
-        currentJobServices = currentJobServices.filter(s => s.id !== id);
-        renderJobTables();
-        calculateJob();
-    }
-
-    function addMaterialToJob() {
-        const id = parseInt(document.getElementById('materialSelect').value, 10);
-        const qty = parseFloat(document.getElementById('materialQty').value);
-        const item = materials.find(m => m.id === id);
-
-        if (!item || isNaN(qty) || qty <= 0) {
-            return alert('Please select a material and enter a valid quantity.');
-        }
-
-        currentJobMaterials.push({
-            ...item,
-            qty,
-            total: item.price * qty
-        });
-
-        renderJobTables();
-        calculateJob();
-    }
-
-    function updateMaterialTypeUI() {
-        const isPerKg = document.getElementById('customMatPerKg').value === 'true';
-        const qtyLabel = document.getElementById('materialQtyLabel');
-        const priceLabel = document.getElementById('customMatPriceLabel');
-        const unitInput = document.getElementById('customMatUnit');
-
-        if (qtyLabel) {
-            qtyLabel.textContent = isPerKg ? 'Quantity / KG Needed' : 'Quantity / Units Needed';
-        }
-
-        if (priceLabel) {
-            priceLabel.textContent = isPerKg ? 'Price per KG (₱)' : 'Cost per Unit (₱)';
-        }
-
-        if (unitInput) {
-            unitInput.placeholder = isPerKg ? 'e.g. kg' : 'e.g. pc, kg, meter';
-            if (isPerKg && !unitInput.value.trim()) {
-                unitInput.value = 'kg';
-            }
-        }
-    }
-
-    function addCustomMaterialToJob() {
-        const name = document.getElementById('customMatName').value.trim();
-        const size = document.getElementById('customMatSize').value.trim();
-        const isPerKg = document.getElementById('customMatPerKg').value === 'true';
-        const unit = (document.getElementById('customMatUnit').value.trim() || (isPerKg ? 'kg' : 'unit')).toLowerCase();
-        const price = parseFloat(document.getElementById('customMatPrice').value);
-        const qty = parseFloat(document.getElementById('materialQty').value);
-
-        if (!name || isNaN(price) || price < 0 || isNaN(qty) || qty <= 0) {
-            return alert('Please enter material name, a valid price, and a positive quantity.');
-        }
-
-        const total = price * qty;
-
-        currentJobMaterials.push({
-            id: Date.now(),
-            name,
-            size,
-            unit,
-            price,
-            qty,
-            isPerKg,
-            total
-        });
-
-        document.getElementById('customMatName').value = '';
-        document.getElementById('customMatSize').value = '';
-        document.getElementById('customMatUnit').value = '';
-        document.getElementById('customMatPrice').value = '0';
-        document.getElementById('customMatPerKg').value = 'false';
-        document.getElementById('materialQty').value = '1';
-        updateMaterialTypeUI();
-
-        renderJobTables();
-        calculateJob();
-    }
-
-    function removeJobMaterial(idx) {
-        currentJobMaterials.splice(idx, 1);
-        renderJobTables();
-        calculateJob();
-    }
-
-    function addLaborToJob() {
-        const id = parseInt(document.getElementById('laborSelect').value, 10);
-        const hours = parseFloat(document.getElementById('laborHours').value);
-        const item = laborRates.find(l => l.id === id);
-
-        if (!item || isNaN(hours) || hours <= 0) {
-            return alert('Please select an operation and enter valid hours.');
-        }
-
-        currentJobLabor.push({
-            ...item,
-            hours,
-            total: item.rate * hours
-        });
-
-        renderJobTables();
-        calculateJob();
-    }
-
-    function removeJobLabor(idx) {
-        currentJobLabor.splice(idx, 1);
-        renderJobTables();
-        calculateJob();
-    }
-
-    function addServiceToJob() {
-        const name = document.getElementById('serviceName').value.trim();
-        const qty = parseFloat(document.getElementById('serviceQty').value);
-        const unitPrice = parseFloat(document.getElementById('serviceUnitPrice').value);
-
-        if (!name || isNaN(qty) || qty <= 0 || isNaN(unitPrice) || unitPrice < 0) {
-            return alert('Please enter a service name, a positive quantity, and a valid unit price.');
-        }
-
-        currentJobServices.push({
-            id: Date.now(),
-            name,
-            qty,
-            unitPrice,
-            total: qty * unitPrice
-        });
-
-        document.getElementById('serviceName').value = '';
-        document.getElementById('serviceQty').value = '1';
-        document.getElementById('serviceUnitPrice').value = '0';
-        renderJobTables();
-        calculateJob();
-    }
-
-    function removeJobService(idx) {
-        currentJobServices.splice(idx, 1);
-        renderJobTables();
-        calculateJob();
-    }
-
-    function editJobMaterial(idx) {
-        if (!currentJobMaterials[idx]) return;
-        editingRow = { type: 'material', idx };
-        renderJobTables();
-    }
-
-    function editJobLabor(idx) {
-        if (!currentJobLabor[idx]) return;
-        editingRow = { type: 'labor', idx };
-        renderJobTables();
-    }
-
-    function editJobService(idx) {
-        if (!currentJobServices[idx]) return;
-        editingRow = { type: 'service', idx };
-        renderJobTables();
-    }
-
-    function saveEditedRow() {
-        if (!editingRow) return;
-
-        if (editingRow.type === 'material') {
-            const material = currentJobMaterials[editingRow.idx];
-            const qty = parseFloat(document.getElementById('editMaterialQty').value);
-            const price = parseFloat(document.getElementById('editMaterialPrice').value);
-            if (isNaN(qty) || qty <= 0 || isNaN(price) || price < 0) {
-                return alert('Please enter a positive quantity and a valid unit price.');
-            }
-            material.qty = qty;
-            material.price = price;
-            material.total = qty * price;
-        }
-
-        if (editingRow.type === 'labor') {
-            const labor = currentJobLabor[editingRow.idx];
-            const hours = parseFloat(document.getElementById('editLaborHours').value);
-            const rate = parseFloat(document.getElementById('editLaborRate').value);
-            if (isNaN(hours) || hours <= 0 || isNaN(rate) || rate < 0) {
-                return alert('Please enter positive hours and a valid hourly rate.');
-            }
-            labor.hours = hours;
-            labor.rate = rate;
-            labor.total = hours * rate;
-        }
-
-        if (editingRow.type === 'service') {
-            const service = currentJobServices[editingRow.idx];
-            const name = document.getElementById('editServiceName').value.trim();
-            const qty = parseFloat(document.getElementById('editServiceQty').value);
-            const unitPrice = parseFloat(document.getElementById('editServicePrice').value);
-            if (!name || isNaN(qty) || qty <= 0 || isNaN(unitPrice) || unitPrice < 0) {
-                return alert('Please enter a service description, a positive quantity, and a valid unit price.');
-            }
-            service.name = name;
-            service.qty = qty;
-            service.unitPrice = unitPrice;
-            service.total = qty * unitPrice;
-        }
-
-        editingRow = null;
-        renderJobTables();
-        calculateJob();
-    }
-
-    function cancelEditedRow() {
-        editingRow = null;
-        renderJobTables();
-    }
-
-    function renderJobTables() {
-        const materialTbody = document.getElementById('jobMaterialsTable');
-
-        if (currentJobMaterials.length === 0) {
-            materialTbody.innerHTML = '<tr><td colspan="4" class="empty-row">No materials added yet.</td></tr>';
-        } else {
-            materialTbody.innerHTML = currentJobMaterials.map((m, i) => {
-                const sizeLabel = m.size ? ` (${escapeHTML(m.size)})` : '';
-                const isEditing = editingRow && editingRow.type === 'material' && editingRow.idx === i;
-                return `
-                    <tr>
-                        <td>${escapeHTML(m.name)}${sizeLabel}</td>
-                        <td>${isEditing ? `<input class="table-input" id="editMaterialQty" type="number" min="0.1" step="any" value="${m.qty}">` : `${Number(m.qty).toLocaleString()} ${escapeHTML(m.isPerKg ? 'kg' : (m.unit || 'unit'))}`}</td>
-                        <td>${isEditing ? `<input class="table-input" id="editMaterialPrice" type="number" min="0" step="0.01" value="${m.price}">` : formatMoney(m.total)}</td>
-                        <td>
-                            <div class="table-actions">
-                                ${isEditing ? '<button type="button" class="btn btn-success btn-small" onclick="saveEditedRow()">Save</button><button type="button" class="btn btn-small" onclick="cancelEditedRow()">Cancel</button>' : `<button type="button" class="btn btn-primary btn-small" onclick="editJobMaterial(${i})">Edit</button><button type="button" class="btn btn-danger btn-small" onclick="removeJobMaterial(${i})">X</button>`}
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-        }
-
-        const laborTbody = document.getElementById('jobLaborTable');
-
-        if (currentJobLabor.length === 0) {
-            laborTbody.innerHTML = '<tr><td colspan="4" class="empty-row">No operations added yet.</td></tr>';
-        } else {
-            laborTbody.innerHTML = currentJobLabor.map((l, i) => {
-                const isEditing = editingRow && editingRow.type === 'labor' && editingRow.idx === i;
-                return `
-                <tr>
-                    <td>${escapeHTML(l.name)}</td>
-                    <td>${isEditing ? '<input class="table-input" id="editLaborHours" type="number" min="0.1" step="any" value="' + l.hours + '">' : Number(l.hours).toLocaleString() + ' hrs'}</td>
-                    <td>${isEditing ? '<input class="table-input" id="editLaborRate" type="number" min="0" step="0.01" value="' + l.rate + '">' : formatMoney(l.total)}</td>
-                    <td>
-                        <div class="table-actions">
-                            ${isEditing ? '<button type="button" class="btn btn-success btn-small" onclick="saveEditedRow()">Save</button><button type="button" class="btn btn-small" onclick="cancelEditedRow()">Cancel</button>' : `<button type="button" class="btn btn-primary btn-small" onclick="editJobLabor(${i})">Edit</button><button type="button" class="btn btn-danger btn-small" onclick="removeJobLabor(${i})">X</button>`}
-                        </div>
-                    </td>
-                </tr>
-            `;
-            }).join('');
-        }
-
-        const serviceTbody = document.getElementById('jobServicesTable');
-
-        if (currentJobServices.length === 0) {
-            serviceTbody.innerHTML = '<tr><td colspan="5" class="empty-row">No services added yet.</td></tr>';
-        } else {
-            serviceTbody.innerHTML = currentJobServices.map((service, i) => {
-                const isEditing = editingRow && editingRow.type === 'service' && editingRow.idx === i;
-                return `
-                <tr>
-                    <td>${isEditing ? '<input class="table-input table-input-wide" id="editServiceName" type="text" value="' + escapeHTML(service.name) + '">' : escapeHTML(service.name)}</td>
-                    <td>${isEditing ? '<input class="table-input" id="editServiceQty" type="number" min="0.1" step="any" value="' + service.qty + '">' : Number(service.qty).toLocaleString()}</td>
-                    <td>${isEditing ? '<input class="table-input" id="editServicePrice" type="number" min="0" step="0.01" value="' + service.unitPrice + '">' : formatMoney(service.unitPrice)}</td>
-                    <td>${isEditing ? 'Update after save' : formatMoney(service.total)}</td>
-                    <td>
-                        <div class="table-actions">
-                            ${isEditing ? '<button type="button" class="btn btn-success btn-small" onclick="saveEditedRow()">Save</button><button type="button" class="btn btn-small" onclick="cancelEditedRow()">Cancel</button>' : `<button type="button" class="btn btn-primary btn-small" onclick="editJobService(${i})">Edit</button><button type="button" class="btn btn-danger btn-small" onclick="removeJobService(${i})">X</button>`}
-                        </div>
-                    </td>
-                </tr>
-            `;
-            }).join('');
-        }
-    }
-
-    function calculateJob() {
-        const matTotal = currentJobMaterials.reduce((acc, curr) => acc + Number(curr.total || 0), 0);
-        const laborTotal = currentJobLabor.reduce((acc, curr) => acc + Number(curr.total || 0), 0);
-        const servicesTotal = currentJobServices.reduce((acc, curr) => acc + Number(curr.total || 0), 0);
-
-        const overhead = parseFloat(document.getElementById('overheadCost').value) || 0;
-        const targetMarginPct = parseFloat(document.getElementById('targetMargin').value) || 0;
-        const contractPrice = parseFloat(document.getElementById('contractPrice').value) || 0;
-        const downpayment = parseFloat(document.getElementById('downpayment').value) || 0;
-        const balanceDue = contractPrice - downpayment;
-
-        const directCost = matTotal + laborTotal + servicesTotal + overhead;
-        const suggestedPrice = directCost * (1 + (targetMarginPct / 100));
-        const profit = contractPrice - directCost;
-        const netMarginPct = contractPrice > 0 ? (profit / contractPrice) * 100 : 0;
-
-        document.getElementById('sumMaterial').innerText = formatMoney(matTotal);
-        document.getElementById('sumLabor').innerText = formatMoney(laborTotal);
-        document.getElementById('sumServices').innerText = formatMoney(servicesTotal);
-        document.getElementById('sumOverhead').innerText = formatMoney(overhead);
-        document.getElementById('sumDirectCost').innerText = formatMoney(directCost);
-        document.getElementById('sumSuggestedPrice').innerText = formatMoney(suggestedPrice);
-        document.getElementById('sumContractPrice').innerText = formatMoney(contractPrice);
-        document.getElementById('sumDownpayment').innerText = formatMoney(downpayment);
-        document.getElementById('sumBalanceDue').innerText = formatMoney(balanceDue);
-
-        const profitEl = document.getElementById('sumProfit');
-        profitEl.innerText = formatMoney(profit);
-        profitEl.style.color = profit >= 0 ? 'var(--success)' : 'var(--danger)';
-
-        const badgeEl = document.getElementById('sumMarginBadge');
-        const badgeClass = netMarginPct >= 0 ? 'badge-success' : 'badge-danger';
-
-        badgeEl.innerHTML = `
-            <span class="badge ${badgeClass}">
-                ${netMarginPct.toFixed(1)}%
-            </span>
+    function addRow(tableId) {
+        const table = document.getElementById(tableId).getElementsByTagName('tbody')[0];
+        const newRow = table.insertRow();
+        
+        let placeholderText = "Description";
+        if (tableId === 'jobTable') placeholderText = "Job / Service Description";
+        else if (tableId === 'matPartsTable') placeholderText = "e.g. Bronze Bushing";
+        else if (tableId === 'matWeightTable') placeholderText = "e.g. Shafting Steel";
+        else if (tableId === 'laborTable') placeholderText = "e.g. Machinist / Welder";
+
+        newRow.innerHTML = `
+            <td><input type="text" placeholder="${placeholderText}"></td>
+            <td><input type="text" class="qty-input" placeholder="0" oninput="formatQtyInput(this); calculateTotals()"></td>
+            <td><input type="text" class="unit-price currency-input" placeholder="0.00" oninput="formatCurrencyInput(this); calculateTotals()"></td>
+            <td><input type="text" class="total-price currency-input" placeholder="0.00" readonly></td>
+            <td class="col-action" data-html2canvas-ignore="true"><button class="btn btn-danger" onclick="removeRow(this)">X</button></td>
         `;
     }
 
-    function csvEscape(value) {
-        const text = String(value ?? '');
-        return '"' + text.replace(/"/g, '""') + '"';
+    function removeRow(btn) {
+        const row = btn.parentNode.parentNode;
+        row.parentNode.removeChild(row);
+        calculateTotals();
     }
 
-    function getQuoteSummary() {
-        const jobTitle = document.getElementById('jobTitle').value.trim() || 'Machine Shop Estimation';
-        const client = document.getElementById('clientName').value.trim() || 'N/A';
-        const projectStatus = document.getElementById('projectStatus').value || 'Unfinished';
-        const matTotal = currentJobMaterials.reduce((acc, curr) => acc + Number(curr.total || 0), 0);
-        const laborTotal = currentJobLabor.reduce((acc, curr) => acc + Number(curr.total || 0), 0);
-        const servicesTotal = currentJobServices.reduce((acc, curr) => acc + Number(curr.total || 0), 0);
-        const overhead = parseFloat(document.getElementById('overheadCost').value) || 0;
-        const targetMarginPct = parseFloat(document.getElementById('targetMargin').value) || 0;
-        const contractPrice = parseFloat(document.getElementById('contractPrice').value) || 0;
-        const downpayment = parseFloat(document.getElementById('downpayment').value) || 0;
-        const balanceDue = contractPrice - downpayment;
-        const directCost = matTotal + laborTotal + servicesTotal + overhead;
-        const suggestedPrice = directCost * (1 + targetMarginPct / 100);
-        const profit = contractPrice - directCost;
-        const netMarginPct = contractPrice > 0 ? (profit / contractPrice) * 100 : 0;
+    function calculateTotals() {
+        let grandMaterialsCost = 0;
+        let grandLaborCost = 0;
 
-        return {
-            jobTitle,
-            client,
-            projectStatus,
-            matTotal,
-            laborTotal,
-            servicesTotal,
-            overhead,
-            targetMarginPct,
-            contractPrice,
-            downpayment,
-            balanceDue,
-            directCost,
-            suggestedPrice,
-            profit,
-            netMarginPct
-        };
-    }
-
-    function exportSummaryCSV() {
-        const summary = getQuoteSummary();
-        const { jobTitle, client, projectStatus, matTotal, laborTotal, servicesTotal, overhead, targetMarginPct, contractPrice, downpayment, balanceDue, directCost, suggestedPrice, profit, netMarginPct } = summary;
-
-        let rows = [];
-
-        rows.push(['Machine Shop Project Estimation Quote']);
-        rows.push(['Project Title', jobTitle]);
-        rows.push(['Client Name', client]);
-        rows.push(['Project Status', projectStatus]);
-        rows.push([]);
-
-        rows.push(['MATERIALS']);
-        rows.push(['Item', 'Qty', 'Unit', 'Unit Cost (PHP)', 'Total Cost (PHP)']);
-
-        currentJobMaterials.forEach(m => {
-            rows.push([
-                m.name,
-                m.qty,
-                m.unit,
-                Number(m.price).toFixed(2),
-                Number(m.total).toFixed(2)
-            ]);
-        });
-
-        rows.push([]);
-        rows.push(['MACHINING & LABOR']);
-        rows.push(['Operation', 'Hours', 'Hourly Rate (PHP)', 'Total Cost (PHP)']);
-
-        currentJobLabor.forEach(l => {
-            rows.push([
-                l.name,
-                l.hours,
-                Number(l.rate).toFixed(2),
-                Number(l.total).toFixed(2)
-            ]);
-        });
-
-        rows.push([]);
-        rows.push(['SERVICES']);
-        rows.push(['Service', 'Qty', 'Unit Price (PHP)', 'Total Cost (PHP)']);
-
-        currentJobServices.forEach(service => {
-            rows.push([
-                service.name,
-                service.qty,
-                Number(service.unitPrice).toFixed(2),
-                Number(service.total).toFixed(2)
-            ]);
-        });
-
-        rows.push([]);
-        rows.push(['COST SUMMARY']);
-        rows.push(['Total Materials', matTotal.toFixed(2)]);
-        rows.push(['Total Labor', laborTotal.toFixed(2)]);
-        rows.push(['Total Services', servicesTotal.toFixed(2)]);
-        rows.push(['Overhead / Setup', overhead.toFixed(2)]);
-        rows.push(['Direct Cost', directCost.toFixed(2)]);
-        rows.push(['Target Profit Margin (%)', targetMarginPct.toFixed(1)]);
-        rows.push(['Suggested Quote Price', suggestedPrice.toFixed(2)]);
-        rows.push(['Contract Price', contractPrice.toFixed(2)]);
-        rows.push(['Client Downpayment', downpayment.toFixed(2)]);
-        rows.push(['Balance Due', balanceDue.toFixed(2)]);
-        rows.push(['Projected Profit / Loss', profit.toFixed(2)]);
-        rows.push(['Net Profit Margin (%)', netMarginPct.toFixed(1)]);
-
-        const csvContent = rows
-            .map(row => row.map(csvEscape).join(','))
-            .join('\r\n');
-
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-
-        const safeFileName = jobTitle
-            .replace(/[^a-z0-9]/gi, '_')
-            .replace(/_+/g, '_')
-            .replace(/^_+|_+$/g, '') || 'Machine_Shop_Estimation';
-
-        link.href = url;
-        link.download = safeFileName + '_Quote.csv';
-
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-
-        URL.revokeObjectURL(url);
-    }
-
-    function buildReceiptMarkup() {
-        const summary = getQuoteSummary();
-        const { jobTitle, client, projectStatus, matTotal, laborTotal, servicesTotal, overhead, targetMarginPct, contractPrice, downpayment, balanceDue, directCost, suggestedPrice } = summary;
-        const quoteDate = new Date().toLocaleDateString('en-PH', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
-
-        const materialRows = currentJobMaterials.length
-            ? currentJobMaterials.map(item => `
-                <tr>
-                    <td>${escapeHTML(item.name)}${item.size ? ` (${escapeHTML(item.size)})` : ''}</td>
-                    <td>${Number(item.qty).toLocaleString()} ${escapeHTML(item.isPerKg ? 'kg' : (item.unit || 'unit'))}</td>
-                    <td>${formatMoney(item.price)}</td>
-                    <td>${formatMoney(item.total)}</td>
-                </tr>
-            `).join('')
-            : '<tr><td colspan="4" style="padding:12px 0; text-align:center; color:#64748b;">No materials added</td></tr>';
-
-        const laborRows = currentJobLabor.length
-            ? currentJobLabor.map(item => `
-                <tr>
-                    <td>${escapeHTML(item.name)}</td>
-                    <td>${Number(item.hours).toLocaleString()} hrs</td>
-                    <td>${formatMoney(item.rate)}</td>
-                    <td>${formatMoney(item.total)}</td>
-                </tr>
-            `).join('')
-            : '<tr><td colspan="4" style="padding:12px 0; text-align:center; color:#64748b;">No labor operations added</td></tr>';
-
-        const serviceRows = currentJobServices.length
-            ? currentJobServices.map(item => `
-                <tr>
-                    <td>${escapeHTML(item.name)}</td>
-                    <td>${Number(item.qty).toLocaleString()}</td>
-                    <td>${formatMoney(item.unitPrice)}</td>
-                    <td>${formatMoney(item.total)}</td>
-                </tr>
-            `).join('')
-            : '<tr><td colspan="4" style="padding:12px 0; text-align:center; color:#64748b;">No services added</td></tr>';
-
-        return `
-            <div style="font-family: Arial, sans-serif; max-width: 900px; margin: 0 auto; background: #ffffff; color: #111827; padding: 30px; border: 1px solid #e2e8f0; border-radius: 12px;">
-                <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom: 2px solid #e2e8f0; padding-bottom: 16px; margin-bottom: 24px;">
-                    <div>
-                        <div style="font-size: 12px; letter-spacing: 1px; text-transform: uppercase; color: #64748b;">Machine Shop Estimate</div>
-                        <h2 style="margin: 6px 0 0; font-size: 28px; color: #1e293b;">${escapeHTML(jobTitle)}</h2>
-                    </div>
-                    <div style="text-align: right;">
-                        <div style="font-size: 12px; color: #64748b;">Client</div>
-                        <div style="font-weight:700; font-size: 18px;">${escapeHTML(client)}</div>
-                    </div>
-                </div>
-
-                <div style="display:grid; grid-template-columns: 1fr; gap: 24px; margin-bottom: 24px;">
-                    <div style="padding: 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;">
-                        <div style="font-size: 12px; text-transform: uppercase; color: #64748b; margin-bottom: 8px;">Quote Details</div>
-                        <div style="font-size: 14px; margin-bottom: 6px;"><strong>Date:</strong> ${escapeHTML(quoteDate)}</div>
-                        <div style="font-size: 14px; margin-bottom: 6px;"><strong>Status:</strong> <span style="font-weight: 700; color: ${projectStatus === 'Finished' ? '#16a34a' : '#b45309'};">${escapeHTML(projectStatus)}</span></div>
-                        <div style="font-size: 14px; margin-bottom: 6px;"><strong>Target Margin:</strong> ${targetMarginPct.toFixed(1)}%</div>
-                        <div style="font-size: 14px; margin-bottom: 6px;"><strong>Contract Price:</strong> ${formatMoney(contractPrice)}</div>
-                        <div style="font-size: 14px; margin-bottom: 6px;"><strong>Downpayment:</strong> ${formatMoney(downpayment)}</div>
-                        <div style="font-size: 14px;"><strong>Balance Due:</strong> ${formatMoney(balanceDue)}</div>
-                        <div style="font-size: 14px;"><strong>Suggested Price:</strong> ${formatMoney(suggestedPrice)}</div>
-                    </div>
-                </div>
-
-                <div style="margin-bottom: 26px;">
-                    <h3 style="font-size: 18px; margin-bottom: 12px; color: #1e293b;">Materials</h3>
-                    <table style="width:100%; border-collapse: collapse; font-size:14px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
-                        <thead>
-                            <tr style="background:#f8fafc;">
-                                <th style="text-align:left; padding:10px; border-bottom: 1px solid #e2e8f0;">Item</th>
-                                <th style="text-align:left; padding:10px; border-bottom: 1px solid #e2e8f0;">Qty</th>
-                                <th style="text-align:left; padding:10px; border-bottom: 1px solid #e2e8f0;">Unit Price</th>
-                                <th style="text-align:left; padding:10px; border-bottom: 1px solid #e2e8f0;">Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>${materialRows}</tbody>
-                    </table>
-                </div>
-
-                <div style="margin-bottom: 26px;">
-                    <h3 style="font-size: 18px; margin-bottom: 12px; color: #1e293b;">Machining & Labor</h3>
-                    <table style="width:100%; border-collapse: collapse; font-size:14px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
-                        <thead>
-                            <tr style="background:#f8fafc;">
-                                <th style="text-align:left; padding:10px; border-bottom: 1px solid #e2e8f0;">Operation</th>
-                                <th style="text-align:left; padding:10px; border-bottom: 1px solid #e2e8f0;">Hours</th>
-                                <th style="text-align:left; padding:10px; border-bottom: 1px solid #e2e8f0;">Rate</th>
-                                <th style="text-align:left; padding:10px; border-bottom: 1px solid #e2e8f0;">Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>${laborRows}</tbody>
-                    </table>
-                </div>
-
-                <div style="margin-bottom: 26px;">
-                    <h3 style="font-size: 18px; margin-bottom: 12px; color: #1e293b;">Services</h3>
-                    <table style="width:100%; border-collapse: collapse; font-size:14px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
-                        <thead>
-                            <tr style="background:#f8fafc;">
-                                <th style="text-align:left; padding:10px; border-bottom: 1px solid #e2e8f0;">Service</th>
-                                <th style="text-align:left; padding:10px; border-bottom: 1px solid #e2e8f0;">Qty</th>
-                                <th style="text-align:left; padding:10px; border-bottom: 1px solid #e2e8f0;">Unit Price</th>
-                                <th style="text-align:left; padding:10px; border-bottom: 1px solid #e2e8f0;">Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>${serviceRows}</tbody>
-                    </table>
-                </div>
-
-                <div style="border-top: 2px solid #e2e8f0; padding-top: 18px; margin-top: 20px;">
-                    <div style="display:flex; justify-content:space-between; font-size: 14px; margin-bottom: 8px;">
-                        <span>Materials Total</span>
-                        <strong>${formatMoney(matTotal)}</strong>
-                    </div>
-                    <div style="display:flex; justify-content:space-between; font-size: 14px; margin-bottom: 8px;">
-                        <span>Labor Total</span>
-                        <strong>${formatMoney(laborTotal)}</strong>
-                    </div>
-                    <div style="display:flex; justify-content:space-between; font-size: 14px; margin-bottom: 8px;">
-                        <span>Services Total</span>
-                        <strong>${formatMoney(servicesTotal)}</strong>
-                    </div>
-                    <div style="display:flex; justify-content:space-between; font-size: 14px; margin-bottom: 8px;">
-                        <span>Downpayment Received</span>
-                        <strong>${formatMoney(downpayment)}</strong>
-                    </div>
-                    <div style="display:flex; justify-content:space-between; font-size: 14px; margin-bottom: 8px;">
-                        <span>Balance Due</span>
-                        <strong>${formatMoney(balanceDue)}</strong>
-                    </div>
-                    <div style="display:flex; justify-content:space-between; font-size: 14px; margin-bottom: 8px;">
-                        <span>Overhead / Setup</span>
-                        <strong>${formatMoney(overhead)}</strong>
-                    </div>
-                    <div style="display:flex; justify-content:space-between; font-size: 18px; font-weight: 700; margin-top: 12px; border-top: 2px solid #e2e8f0; padding-top: 12px;">
-                        <span>Grand Total</span>
-                        <span>${formatMoney(directCost)}</span>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-
-    function printQuotePDF() {
-        const receipt = buildReceiptMarkup();
-        const printWindow = window.open('', '_blank', 'width=1000,height=900');
-        if (!printWindow) {
-            alert('Your browser blocked the PDF window. Please allow popups and try again.');
-            return;
-        }
-
-        printWindow.document.write(`<!DOCTYPE html><html><head><title>Machine Shop Quote</title><style>body{margin:0;padding:24px;background:#f8fafc;}</style></head><body>${receipt}</body></html>`);
-        printWindow.document.close();
-        printWindow.focus();
-        setTimeout(() => printWindow.print(), 300);
-    }
-
-    function exportQuotePNG() {
-        const loaderScript = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
-
-        const script = document.createElement('script');
-        script.src = loaderScript;
-        script.onload = () => {
-            const printable = document.getElementById('quotePrintArea');
-            const clone = printable.cloneNode(true);
-            clone.style.position = 'fixed';
-            clone.style.left = '-9999px';
-            clone.style.top = '0';
-            clone.style.width = '900px';
-            clone.style.background = '#fff';
-            clone.style.padding = '24px';
-            clone.style.borderRadius = '10px';
-            clone.style.boxShadow = 'none';
-            document.body.appendChild(clone);
-
-            html2canvas(clone, { backgroundColor: '#ffffff', scale: 2 }).then(canvas => {
-                const link = document.createElement('a');
-                link.download = 'Machine_Shop_Quote.png';
-                link.href = canvas.toDataURL('image/png');
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                document.body.removeChild(clone);
-            }).catch(error => {
-                console.error('PNG export failed:', error);
-                alert('PNG export failed. Please try saving as PDF instead.');
-                document.body.removeChild(clone);
+        const calculateTable = (tableId, subtotalId) => {
+            let tableTotal = 0;
+            const rows = document.querySelectorAll(`#${tableId} tbody tr`);
+            rows.forEach(row => {
+                const qty = parseNumber(row.querySelector('.qty-input').value);
+                const unitPrice = parseNumber(row.querySelector('.unit-price').value);
+                const total = qty * unitPrice;
+                row.querySelector('.total-price').value = total ? formatNumberWithCommas(total) : '';
+                tableTotal += total;
             });
+            
+            document.getElementById(subtotalId).value = '₱' + formatNumberWithCommas(tableTotal);
+            return tableTotal;
         };
-        script.onerror = () => {
-            alert('PNG export is unavailable right now. Please use the Save as PDF option instead.');
-        };
-        document.body.appendChild(script);
-    }
 
-    function escapeHTML(value) {
-        return String(value ?? '')
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#039;');
-    }
+        calculateTable('jobTable', 'subtotalJob');
+        const partsTotal = calculateTable('matPartsTable', 'subtotalMatParts');
+        const rawTotal = calculateTable('matWeightTable', 'subtotalMatWeight');
+        grandMaterialsCost = partsTotal + rawTotal;
+        grandLaborCost = calculateTable('laborTable', 'subtotalLabor');
 
-    function initializeApp() {
-        try {
-            updateMaterialTypeUI();
-            renderDropdowns();
-            renderDatabaseTables();
-            renderSavedProjects();
-            renderJobTables();
-            calculateJob();
-            updateSaveProjectButton();
-        } catch (error) {
-            console.error('Estimator initialization failed:', error);
-            const errorBox = document.getElementById('appError');
-            if (errorBox) {
-                errorBox.style.display = 'block';
-            }
+        const totalCapital = grandMaterialsCost + grandLaborCost;
+        const contractPrice = parseNumber(document.getElementById('contractPrice').value);
+        const downpayment = parseNumber(document.getElementById('downpayment').value);
+
+        const netProfit = contractPrice - totalCapital;
+        const remainingBalance = contractPrice - downpayment;
+
+        document.getElementById('dispTotalCapital').innerText = formatCurrencyWithSymbol(totalCapital);
+        
+        const profitElem = document.getElementById('dispEstimatedProfit');
+        const profitLabel = document.getElementById('lblEstimatedProfit');
+        
+        profitElem.innerText = formatCurrencyWithSymbol(netProfit);
+        
+        if (netProfit < 0) {
+            profitElem.className = 'val profit-loss';
+            profitLabel.innerText = 'Estimated Net Loss';
+        } else if (netProfit > 0) {
+            profitElem.className = 'val profit-gain';
+            profitLabel.innerText = 'Estimated Net Profit';
+        } else {
+            profitElem.className = 'val';
+            profitLabel.innerText = 'Estimated Net Profit / (Loss)';
         }
+
+        document.getElementById('dispRemainingBalance').innerText = formatCurrencyWithSymbol(remainingBalance);
     }
 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initializeApp);
-    } else {
-        initializeApp();
+    function exportPDF() {
+        const element = document.getElementById('estimatorSheet');
+        const projName = document.getElementById('projectName').value.trim() || 'PROJECT_ESTIMATE';
+        const opt = {
+            margin:       10,
+            filename:     `${projName.replace(/[^a-z0-9]/gi, '_')}.pdf`,
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2 },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+        html2pdf().set(opt).from(element).save();
+    }
+
+    function exportImage(format) {
+        const element = document.getElementById('estimatorSheet');
+        const projName = document.getElementById('projectName').value.trim() || 'PROJECT_ESTIMATE';
+        
+        html2canvas(element, { scale: 2 }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = `${projName.replace(/[^a-z0-9]/gi, '_')}.${format}`;
+            link.href = canvas.toDataURL(`image/${format}`, 0.95);
+            link.click();
+        });
+    }
+
+    function saveProjectFile() {
+        const getTableData = (tableId) => {
+            const rows = document.querySelectorAll(`#${tableId} tbody tr`);
+            const data = [];
+            rows.forEach(row => {
+                const inputs = row.querySelectorAll('input');
+                data.push({
+                    desc: inputs[0].value,
+                    qty: inputs[1].value,
+                    unitPrice: inputs[2].value
+                });
+            });
+            return data;
+        };
+
+        const projectData = {
+            projectName: document.getElementById('projectName').value.toUpperCase(),
+            targetDate: document.getElementById('targetDate').value,
+            workStatus: document.getElementById('workStatus').value,
+            contractPrice: document.getElementById('contractPrice').value,
+            downpayment: document.getElementById('downpayment').value,
+            jobTable: getTableData('jobTable'),
+            matPartsTable: getTableData('matPartsTable'),
+            matWeightTable: getTableData('matWeightTable'),
+            laborTable: getTableData('laborTable')
+        };
+
+        const projName = document.getElementById('projectName').value.trim() || 'PROJECT_ESTIMATE';
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(projectData, null, 2));
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", `${projName.replace(/[^a-z0-9]/gi, '_')}_data.json`);
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+    }
+
+    function loadProjectFile(event) {
+        const fileReader = new FileReader();
+        fileReader.onload = function(e) {
+            try {
+                const data = JSON.parse(e.target.result);
+
+                if (data.projectName !== undefined) document.getElementById('projectName').value = data.projectName.toUpperCase();
+                if (data.targetDate !== undefined) document.getElementById('targetDate').value = data.targetDate;
+                if (data.workStatus !== undefined) {
+                    const statusSelect = document.getElementById('workStatus');
+                    statusSelect.value = data.workStatus;
+                    updateStatusColor(statusSelect);
+                }
+                if (data.contractPrice !== undefined) document.getElementById('contractPrice').value = data.contractPrice;
+                if (data.downpayment !== undefined) document.getElementById('downpayment').value = data.downpayment;
+
+                const populateTable = (tableId, rowData) => {
+                    if (!rowData) return;
+                    const tbody = document.getElementById(tableId).getElementsByTagName('tbody')[0];
+                    tbody.innerHTML = '';
+
+                    rowData.forEach(item => {
+                        addRow(tableId);
+                        const lastRow = tbody.rows[tbody.rows.length - 1];
+                        const inputs = lastRow.querySelectorAll('input');
+                        inputs[0].value = item.desc || '';
+                        inputs[1].value = item.qty || '';
+                        inputs[2].value = item.unitPrice || '';
+                    });
+                };
+
+                populateTable('jobTable', data.jobTable);
+                populateTable('matPartsTable', data.matPartsTable);
+                populateTable('matWeightTable', data.matWeightTable);
+                populateTable('laborTable', data.laborTable);
+
+                calculateTotals();
+
+                alert('Project data loaded successfully!');
+            } catch (err) {
+                alert('Failed to load file. Make sure it is a valid estimator JSON file.');
+            }
+        };
+
+        if (event.target.files[0]) {
+            fileReader.readAsText(event.target.files[0]);
+        }
     }
 </script>
 
